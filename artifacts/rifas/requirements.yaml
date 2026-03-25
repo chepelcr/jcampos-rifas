@@ -1,0 +1,20 @@
+packages:
+  "framer-motion": "For festive page transitions and modal animations"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod validation integration with react-hook-form"
+  "date-fns": "For formatting draw dates and creation dates gracefully"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For merging tailwind classes without conflicts"
+  "canvas-confetti": "For a celebratory confetti effect when drawing a raffle"
+
+images:
+  - path: "artifacts/rifas/public/images/hero-bg.png"
+    description: "Festive and vibrant abstract background with soft glowing shapes in warm colors like orange, pink, and yellow. Elegant and celebratory."
+    aspect_ratio: "16:9"
+  - path: "artifacts/rifas/public/images/logo.png"
+    description: "A modern, colorful icon of a raffle ticket or star, bright gradients, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using generated hooks from @workspace/api-client-react
+  - API errors will be caught and displayed via toast notifications
