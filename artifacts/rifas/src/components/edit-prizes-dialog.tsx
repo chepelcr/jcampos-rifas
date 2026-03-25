@@ -95,7 +95,7 @@ export function EditPrizesDialog({ isOpen, onClose, raffle }: EditPrizesDialogPr
                   <Input
                     value={prize}
                     onChange={(e) => updatePrize(i, e.target.value)}
-                    placeholder={`Ej. Pantalla 50" o $2000`}
+                    placeholder={`Ej. Pantalla 50" o ₡2000`}
                   />
                   {prizes.length > 1 && (
                     <Button
