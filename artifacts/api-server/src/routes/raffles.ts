@@ -378,25 +378,45 @@ router.post("/:id/numbers/:number/release", async (req, res) => {
 router.get("/:id/buyers", async (req, res) => {
   try {
     const raffleId = parseInt(req.params.id);
-    const buyers = await db.select().from(buyersTable).where(eq(buyersTable.raffleId, raffleId));
-    const numbers = await db.select().from(raffleNumbersTable).where(eq(raffleNumbersTable.raffleId, raffleId));
 
-    const buyerNumberMap = new Map<number, number[]>();
-    for (const num of numbers) {
-      if (num.buyerId) {
-        if (!buyerNumberMap.has(num.buyerId)) buyerNumberMap.set(num.buyerId, []);
-        buyerNumberMap.get(num.buyerId)!.push(num.number);
+    // Only fetch buyers that have at least one assigned number (inner join)
+    const rows = await db
+      .select({
+        id: buyersTable.id,
+        raffleId: buyersTable.raffleId,
+        name: buyersTable.name,
+        phone: buyersTable.phone,
+        email: buyersTable.email,
+        createdAt: buyersTable.createdAt,
+        number: raffleNumbersTable.number,
+      })
+      .from(buyersTable)
+      .innerJoin(
+        raffleNumbersTable,
+        and(
+          eq(raffleNumbersTable.buyerId, buyersTable.id),
+          eq(raffleNumbersTable.raffleId, raffleId)
+        )
+      )
+      .where(eq(buyersTable.raffleId, raffleId));
+
+    // Group numbers per buyer
+    const buyerMap = new Map<number, { id: number; raffleId: number; name: string; phone: string | null; email: string | null; createdAt: Date; numbers: number[] }>();
+    for (const row of rows) {
+      if (!buyerMap.has(row.id)) {
+        buyerMap.set(row.id, { ...row, phone: row.phone ?? null, email: row.email ?? null, numbers: [] });
       }
+      buyerMap.get(row.id)!.numbers.push(row.number);
     }
 
     res.json(
-      buyers.map((b) => ({
+      Array.from(buyerMap.values()).map((b) => ({
         id: b.id,
         raffleId: b.raffleId,
         name: b.name,
-        phone: b.phone ?? null,
-        email: b.email ?? null,
-        numbers: buyerNumberMap.get(b.id) ?? [],
+        phone: b.phone,
+        email: b.email,
+        numbers: b.numbers,
         createdAt: b.createdAt.toISOString(),
       }))
     );
