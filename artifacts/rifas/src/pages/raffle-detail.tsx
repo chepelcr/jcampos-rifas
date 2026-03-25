@@ -124,7 +124,7 @@ export default function RaffleDetail() {
                 <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-full"><Ticket className="w-6 h-6" /></div>
                   <div>
-                    <p className="text-white/70 text-sm">Precio Mxn</p>
+                    <p className="text-white/70 text-sm">Precio CRC</p>
                     <p className="text-2xl font-bold">{formatCurrency(raffle.pricePerNumber)}</p>
                   </div>
                 </div>
