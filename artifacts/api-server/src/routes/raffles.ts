@@ -390,15 +390,17 @@ router.get("/:id/buyers", async (req, res) => {
     }
 
     res.json(
-      buyers.map((b) => ({
-        id: b.id,
-        raffleId: b.raffleId,
-        name: b.name,
-        phone: b.phone ?? null,
-        email: b.email ?? null,
-        numbers: buyerNumberMap.get(b.id) ?? [],
-        createdAt: b.createdAt.toISOString(),
-      }))
+      buyers
+        .filter((b) => (buyerNumberMap.get(b.id) ?? []).length > 0)
+        .map((b) => ({
+          id: b.id,
+          raffleId: b.raffleId,
+          name: b.name,
+          phone: b.phone ?? null,
+          email: b.email ?? null,
+          numbers: buyerNumberMap.get(b.id)!,
+          createdAt: b.createdAt.toISOString(),
+        }))
     );
   } catch (err) {
     req.log.error({ err }, "Error listing buyers");
