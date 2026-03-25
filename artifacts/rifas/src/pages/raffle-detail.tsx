@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowLeft, Download, Image as ImageIcon, Users, User, Ticket, CheckCircle2, Trophy, Loader2, Sparkles, X, Trash2, Phone, Mail } from "lucide-react"
+import { ArrowLeft, Download, Image as ImageIcon, Users, User, Ticket, CheckCircle2, Trophy, Loader2, Sparkles, X, Trash2, Phone, Mail, Pencil } from "lucide-react"
 import { Link, useLocation } from "wouter"
 import { AssignDialog } from "@/components/assign-dialog"
 import { BuyerInfoDialog } from "@/components/buyer-info-dialog"
+import { EditPrizesDialog } from "@/components/edit-prizes-dialog"
 import { RaffleNumber } from "@workspace/api-client-react"
 import confetti from "canvas-confetti"
 
@@ -27,6 +28,7 @@ export default function RaffleDetail() {
   const deleteMutation = useDeleteRaffleWrapper()
 
   const [activeTab, setActiveTab] = useState<'numbers' | 'buyers'>('numbers')
+  const [editPrizesOpen, setEditPrizesOpen] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
   const handleDownloadImage = async () => {
@@ -174,9 +176,16 @@ export default function RaffleDetail() {
       {(raffle.singlePrizeAmount || (raffle.prizes && raffle.prizes.length > 0)) && (
         <Card className="border-0 shadow-lg overflow-hidden">
           <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Trophy className="w-6 h-6 text-accent" />
-              <h2 className="text-xl font-bold">Premios</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-6 h-6 text-accent" />
+                <h2 className="text-xl font-bold">Premios</h2>
+              </div>
+              {raffle.status === 'active' && (
+                <Button variant="ghost" size="icon" onClick={() => setEditPrizesOpen(true)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
             </div>
             {raffle.type === 'single_amount' && raffle.singlePrizeAmount ? (
               <div className="bg-accent/10 rounded-xl p-4 text-center">
@@ -401,6 +410,14 @@ export default function RaffleDetail() {
           onClose={() => setSelectedSoldNum(null)}
           raffleId={raffleId}
           numberInfo={selectedSoldNum}
+        />
+      )}
+
+      {editPrizesOpen && (
+        <EditPrizesDialog
+          isOpen={true}
+          onClose={() => setEditPrizesOpen(false)}
+          raffle={raffle}
         />
       )}
     </div>
