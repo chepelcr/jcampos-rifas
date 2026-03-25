@@ -108,8 +108,8 @@ router.post("/", async (req, res) => {
       })
       .returning();
 
-    // Generate numbers 0-100
-    const numberValues = Array.from({ length: 101 }, (_, i) => ({
+    // Generate numbers 0-99
+    const numberValues = Array.from({ length: 100 }, (_, i) => ({
       raffleId: raffle.id,
       number: i,
       status: "available" as const,
@@ -127,7 +127,7 @@ router.post("/", async (req, res) => {
       status: raffle.status,
       prizes: raffle.prizes ?? null,
       singlePrizeAmount: raffle.singlePrizeAmount ? parseFloat(raffle.singlePrizeAmount) : null,
-      totalNumbers: 101,
+      totalNumbers: 100,
       soldNumbers: 0,
       createdAt: raffle.createdAt.toISOString(),
     });
@@ -464,7 +464,7 @@ router.post("/:id/draw", async (req, res) => {
       const winnerNum = soldNumbers[randomIndex];
       const buyer = winnerNum.buyerId ? buyerMap.get(winnerNum.buyerId) : null;
       const prize = raffle.singlePrizeAmount
-        ? `$${parseFloat(raffle.singlePrizeAmount).toLocaleString()}`
+        ? `₡${parseFloat(raffle.singlePrizeAmount).toLocaleString("es-CR")}`
         : null;
 
       winners.push({
@@ -581,7 +581,7 @@ function generateRaffleHtml(
     ? new Date(raffle.drawDate).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" })
     : "Por definir";
 
-  const numberCells = Array.from({ length: 101 }, (_, i) => {
+  const numberCells = Array.from({ length: 100 }, (_, i) => {
     const num = numbers.find((n) => n.number === i);
     const isSold = num?.status === "sold";
     const buyer = num?.buyerId ? buyerMap.get(num.buyerId) : null;
@@ -626,8 +626,8 @@ function generateRaffleHtml(
 </div>
 <div class="info-row">
   <div class="info-card"><div class="label">Fecha del Sorteo</div><div class="value">${drawDate}</div></div>
-  <div class="info-card"><div class="label">Valor por Número</div><div class="value">$${parseFloat(raffle.pricePerNumber).toLocaleString()}</div></div>
-  <div class="info-card"><div class="label">Números Vendidos</div><div class="value">${numbers.filter((n) => n.status === "sold").length} / 101</div></div>
+  <div class="info-card"><div class="label">Valor por Número</div><div class="value">₡${parseFloat(raffle.pricePerNumber).toLocaleString("es-CR")}</div></div>
+  <div class="info-card"><div class="label">Números Vendidos</div><div class="value">${numbers.filter((n) => n.status === "sold").length} / 100</div></div>
 </div>
 <h3 style="margin-bottom:8px;color:#374151;">Números de la Rifa</h3>
 <div class="grid">${numberCells}</div>

@@ -97,7 +97,7 @@ export default function CreateRaffle() {
           </div>
           <CardTitle className="text-3xl">Crear Nueva Rifa</CardTitle>
           <CardDescription className="text-base">
-            Configura los detalles de tu próximo sorteo (Automáticamente se crearán 101 números del 0 al 100).
+            Configura los detalles de tu próximo sorteo (Automáticamente se crearán 100 números del 0 al 99).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -126,17 +126,17 @@ export default function CreateRaffle() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pricePerNumber">Precio por Número (MXN)</Label>
+                    <Label htmlFor="pricePerNumber">Precio por Número (CRC)</Label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
-                      <Input id="pricePerNumber" type="number" step="0.01" className="pl-8" placeholder="50.00" {...register("pricePerNumber")} />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₡</span>
+                      <Input id="pricePerNumber" type="number" step="1" className="pl-8" placeholder="1000" {...register("pricePerNumber")} />
                     </div>
                     {errors.pricePerNumber && <p className="text-sm text-destructive font-medium">{errors.pricePerNumber.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="drawDate">Fecha del Sorteo (Opcional)</Label>
-                    <Input id="drawDate" type="datetime-local" {...register("drawDate")} />
+                    <Input id="drawDate" type="date" {...register("drawDate")} />
                   </div>
                 </div>
               </div>
@@ -163,10 +163,10 @@ export default function CreateRaffle() {
               <div className="mt-6">
                 {watchType === 'single_amount' ? (
                   <div className="space-y-2 animate-in fade-in">
-                    <Label htmlFor="singlePrizeAmount">Monto del Premio (MXN)</Label>
+                    <Label htmlFor="singlePrizeAmount">Monto del Premio (CRC)</Label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
-                      <Input id="singlePrizeAmount" type="number" step="0.01" className="pl-8 text-lg font-bold" placeholder="5000.00" {...register("singlePrizeAmount")} />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₡</span>
+                      <Input id="singlePrizeAmount" type="number" step="1" className="pl-8 text-lg font-bold" placeholder="500000" {...register("singlePrizeAmount")} />
                     </div>
                     {errors.singlePrizeAmount && <p className="text-sm text-destructive font-medium">{errors.singlePrizeAmount.message}</p>}
                   </div>
@@ -204,7 +204,7 @@ export default function CreateRaffle() {
               {createMutation.isPending ? (
                 <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando Rifa...</>
               ) : (
-                <><Sparkles className="w-5 h-5 mr-2" /> Generar Rifa y 101 Números</>
+                <><Sparkles className="w-5 h-5 mr-2" /> Generar Rifa y 100 Números</>
               )}
             </Button>
           </form>
