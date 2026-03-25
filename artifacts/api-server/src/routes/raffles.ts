@@ -612,7 +612,7 @@ function generateRaffleHtml(
   .prizes h3 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 8px; }
   .prizes-list { display: flex; flex-wrap: wrap; gap: 8px; }
   .prize-item { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #92400e; }
-  .grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin-top: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 10px; }
   .number-cell { position: relative; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 2px; text-align: center; font-size: 13px; font-weight: 600; }
   .number-cell.available { background: #ffffff; color: #111827; }
   .number-cell.sold { background: #e5e7eb; color: #6b7280; }
