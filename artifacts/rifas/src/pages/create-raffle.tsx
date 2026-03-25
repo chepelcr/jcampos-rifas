@@ -181,7 +181,7 @@ export default function CreateRaffle() {
                         <Input 
                           value={prize}
                           onChange={(e) => updatePrize(index, e.target.value)}
-                          placeholder={`Ej. Pantalla 50" o $2000`}
+                          placeholder={`Ej. Pantalla 50" o ₡2000`}
                         />
                         {prizesList.length > 1 && (
                           <Button type="button" variant="ghost" size="icon" onClick={() => removePrize(index)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
