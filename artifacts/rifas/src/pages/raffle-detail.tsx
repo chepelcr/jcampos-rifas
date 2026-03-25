@@ -56,8 +56,8 @@ export default function RaffleDetail() {
     }
   }
 
-  // Create an array of 101 elements for the grid 0-100
-  const gridNumbers = Array.from({ length: 101 }, (_, i) => i)
+  // Create an array of 100 elements for the grid 0-99
+  const gridNumbers = Array.from({ length: 100 }, (_, i) => i)
   
   // Map API numbers to a fast lookup dictionary
   const numbersMap = new Map(numbers?.map(n => [n.number, n]))
@@ -70,12 +70,12 @@ export default function RaffleDetail() {
           Volver
         </Link>
         <div className="flex gap-2">
-          <a href={`/api/raffles/${raffleId}/export/pdf`} target="_blank" rel="noreferrer">
+          <a href={`/api/raffles/${raffleId}/export/pdf`} download={`rifa-${raffleId}.pdf`}>
             <Button variant="outline" className="bg-white">
               <Download className="w-4 h-4 mr-2" /> PDF
             </Button>
           </a>
-          <a href={`/api/raffles/${raffleId}/export/image`} target="_blank" rel="noreferrer">
+          <a href={`/api/raffles/${raffleId}/export/image`} download={`rifa-${raffleId}.png`}>
             <Button variant="outline" className="bg-white">
               <ImageIcon className="w-4 h-4 mr-2" /> Imagen
             </Button>
@@ -152,6 +152,34 @@ export default function RaffleDetail() {
         </div>
       </Card>
 
+      {/* Prizes Section */}
+      {(raffle.singlePrizeAmount || (raffle.prizes && raffle.prizes.length > 0)) && (
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy className="w-6 h-6 text-accent" />
+              <h2 className="text-xl font-bold">Premios</h2>
+            </div>
+            {raffle.type === 'single_amount' && raffle.singlePrizeAmount ? (
+              <div className="bg-accent/10 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-accent">{formatCurrency(raffle.singlePrizeAmount)}</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {raffle.prizes?.map((prize, idx) => (
+                  <div key={idx} className="bg-muted/50 rounded-xl p-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </div>
+                    <p className="font-medium">{prize}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Winners Section if completed */}
       {raffle.status === 'completed' && raffle.winners && raffle.winners.length > 0 && (
         <Card className="border-4 border-accent shadow-xl bg-gradient-to-br from-white to-accent/5 overflow-hidden relative">
@@ -188,7 +216,7 @@ export default function RaffleDetail() {
             className={`flex-1 py-4 font-bold text-lg transition-colors relative ${activeTab === 'numbers' ? 'text-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
             onClick={() => setActiveTab('numbers')}
           >
-            Cuadrícula (0-100)
+            Cuadrícula (0-99)
             {activeTab === 'numbers' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />}
           </button>
           <button 

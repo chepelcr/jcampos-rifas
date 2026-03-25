@@ -608,6 +608,10 @@ function generateRaffleHtml(
   .info-card { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
   .info-card .label { font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600; }
   .info-card .value { font-size: 18px; font-weight: bold; color: #111827; margin-top: 4px; }
+  .prizes { margin-bottom: 20px; }
+  .prizes h3 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 8px; }
+  .prizes-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .prize-item { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #92400e; }
   .grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin-top: 10px; }
   .number-cell { position: relative; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 2px; text-align: center; font-size: 13px; font-weight: 600; }
   .number-cell.available { background: #ffffff; color: #111827; }
@@ -629,6 +633,15 @@ function generateRaffleHtml(
   <div class="info-card"><div class="label">Valor por Número</div><div class="value">₡${parseFloat(raffle.pricePerNumber).toLocaleString("es-CR")}</div></div>
   <div class="info-card"><div class="label">Números Vendidos</div><div class="value">${numbers.filter((n) => n.status === "sold").length} / 100</div></div>
 </div>
+${raffle.type === "single_amount" && raffle.singlePrizeAmount ? `
+<div class="prizes">
+  <h3>🏆 Premio</h3>
+  <div class="prizes-list"><div class="prize-item">₡${parseFloat(raffle.singlePrizeAmount).toLocaleString("es-CR")}</div></div>
+</div>` : raffle.prizes && raffle.prizes.length > 0 ? `
+<div class="prizes">
+  <h3>🏆 Premios</h3>
+  <div class="prizes-list">${raffle.prizes.map((p, i) => `<div class="prize-item">${i + 1}. ${p}</div>`).join("")}</div>
+</div>` : ""}
 <h3 style="margin-bottom:8px;color:#374151;">Números de la Rifa</h3>
 <div class="grid">${numberCells}</div>
 <div class="legend">
