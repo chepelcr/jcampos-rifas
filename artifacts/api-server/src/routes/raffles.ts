@@ -669,6 +669,7 @@ ${raffle.type === "single_amount" && raffle.singlePrizeAmount ? `
   <div class="legend-item"><div class="legend-box" style="background:#e5e7eb;"></div><span>Vendido</span></div>
 </div>
 <div class="watermark">Generado por Gestor de Rifas</div>
+<script>window.onload = () => { window.print(); }</script>
 </body>
 </html>`;
 }

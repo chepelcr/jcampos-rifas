@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useRoute } from "wouter"
 import { useRaffle, useRaffleNumbers, useRaffleBuyers, useDrawRaffleWrapper, useDeleteRaffleWrapper } from "@/hooks/use-raffles"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,27 +29,13 @@ export default function RaffleDetail() {
 
   const [activeTab, setActiveTab] = useState<'numbers' | 'buyers'>('numbers')
   const [editPrizesOpen, setEditPrizesOpen] = useState(false)
-  const printRef = useRef<HTMLDivElement>(null)
 
-  const handleDownloadImage = async () => {
-    if (!printRef.current) return
-    const { default: html2canvas } = await import("html2canvas")
-    const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff" })
-    const link = document.createElement("a")
-    link.download = `rifa-${raffleId}.png`
-    link.href = canvas.toDataURL("image/png")
-    link.click()
+  const handleDownloadPdf = () => {
+    window.open(`/api/raffles/${raffleId}/export/pdf`, '_blank')
   }
 
-  const handleDownloadPdf = async () => {
-    if (!printRef.current) return
-    const { default: html2canvas } = await import("html2canvas")
-    const { jsPDF } = await import("jspdf")
-    const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff" })
-    const imgData = canvas.toDataURL("image/png")
-    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width / 2, canvas.height / 2] })
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2)
-    pdf.save(`rifa-${raffleId}.pdf`)
+  const handleDownloadImage = () => {
+    window.open(`/api/raffles/${raffleId}/export/image`, '_blank')
   }
   const [selectedNumToAssign, setSelectedNumToAssign] = useState<number | null>(null)
   const [selectedSoldNum, setSelectedSoldNum] = useState<RaffleNumber | null>(null)
@@ -328,71 +314,6 @@ export default function RaffleDetail() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Hidden printable layout for PDF/Image export */}
-      <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0, width: "900px", background: "#fff", padding: "20px", fontFamily: "Arial, sans-serif" }}>
-        <div style={{ textAlign: "center", marginBottom: "20px", padding: "20px", background: "linear-gradient(135deg, #f59e0b, #ef4444)", color: "white", borderRadius: "12px" }}>
-          <div style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "8px" }}>🎟️ {raffle.name}</div>
-          {raffle.description && <div style={{ fontSize: "14px", opacity: 0.9 }}>{raffle.description}</div>}
-        </div>
-        <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
-          <div style={{ flex: 1, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
-            <div style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", fontWeight: 600 }}>Fecha del Sorteo</div>
-            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginTop: "4px" }}>
-              {raffle.drawDate ? new Date(raffle.drawDate).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" }) : "Por definir"}
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
-            <div style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", fontWeight: 600 }}>Valor por Número</div>
-            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginTop: "4px" }}>{formatCurrency(raffle.pricePerNumber)}</div>
-          </div>
-          <div style={{ flex: 1, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
-            <div style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase", fontWeight: 600 }}>Números Vendidos</div>
-            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginTop: "4px" }}>{raffle.soldNumbers} / 100</div>
-          </div>
-        </div>
-        {(raffle.type === 'single_amount' && raffle.singlePrizeAmount) ? (
-          <div style={{ marginBottom: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>🏆 Premio</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "8px", padding: "6px 12px", fontSize: "13px", fontWeight: 600, color: "#92400e" }}>{formatCurrency(raffle.singlePrizeAmount)}</div>
-            </div>
-          </div>
-        ) : raffle.prizes && raffle.prizes.length > 0 ? (
-          <div style={{ marginBottom: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>🏆 Premios</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {raffle.prizes.map((p, i) => (
-                <div key={i} style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "8px", padding: "6px 12px", fontSize: "13px", fontWeight: 600, color: "#92400e" }}>{i + 1}. {p}</div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        <div style={{ fontSize: "14px", fontWeight: 700, color: "#374151", marginBottom: "8px" }}>Números de la Rifa</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: "4px" }}>
-          {Array.from({ length: 100 }, (_, i) => {
-            const info = numbersMap.get(i)
-            const isSold = info?.status === "sold"
-            return (
-              <div key={i} style={{ position: "relative", border: "1px solid #d1d5db", borderRadius: "6px", padding: "6px 2px", textAlign: "center", fontSize: "13px", fontWeight: 600, background: isSold ? "#e5e7eb" : "#ffffff", color: isSold ? "#6b7280" : "#111827" }}>
-                <span style={{ opacity: isSold ? 0.4 : 1 }}>{i}</span>
-                {isSold && <span style={{ position: "absolute", top: "2px", right: "4px", fontSize: "9px", color: "#ef4444" }}>✕</span>}
-              </div>
-            )
-          })}
-        </div>
-        <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: "14px", height: "14px", borderRadius: "3px", border: "1px solid #d1d5db", background: "#fff" }}></div>
-            <span>Disponible</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: "14px", height: "14px", borderRadius: "3px", border: "1px solid #d1d5db", background: "#e5e7eb" }}></div>
-            <span>Vendido</span>
-          </div>
-        </div>
-        <div style={{ textAlign: "center", fontSize: "10px", color: "#9ca3af", marginTop: "16px" }}>Generado por Gestor de Rifas</div>
       </div>
 
       {selectedNumToAssign !== null && (
