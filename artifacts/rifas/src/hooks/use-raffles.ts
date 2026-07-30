@@ -29,7 +29,12 @@ function readStore(): Store {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return emptyStore();
   try {
-    return { ...emptyStore(), ...JSON.parse(raw) } as Store;
+    const store = { ...emptyStore(), ...JSON.parse(raw) } as Store;
+    // Data created before payment tracking is treated as pending until confirmed.
+    store.raffles.forEach((raffle) => raffle.numbers.forEach((number) => {
+      number.paymentStatus ??= "pending";
+    }));
+    return store;
   } catch {
     throw new Error("No fue posible leer los datos guardados en este dispositivo.");
   }
@@ -102,6 +107,7 @@ export function useCreateRaffleWrapper() {
       raffleId: id,
       number,
       status: "available",
+      paymentStatus: "pending",
       buyerId: null,
       buyerName: null,
     }));
@@ -157,6 +163,7 @@ export function useAssignNumberWrapper() {
       raffle.buyers.push(buyer);
     }
     raffleNumber.status = "sold";
+    raffleNumber.paymentStatus = "pending";
     raffleNumber.buyerId = buyer.id;
     raffleNumber.buyerName = buyer.name;
     raffle.soldNumbers = raffle.numbers.filter((item) => item.status === "sold").length;
@@ -183,6 +190,7 @@ export function useAssignNumbersWrapper() {
     const assigned = selected as RaffleNumber[];
     assigned.forEach((raffleNumber) => {
       raffleNumber.status = "sold";
+      raffleNumber.paymentStatus = "pending";
       raffleNumber.buyerId = buyer.id;
       raffleNumber.buyerName = buyer.name;
     });
@@ -199,12 +207,28 @@ export function useReleaseNumberWrapper() {
     const raffleNumber = raffle.numbers.find((item) => item.number === number);
     if (!raffleNumber) throw new Error("No se encontró el número.");
     raffleNumber.status = "available";
+    raffleNumber.paymentStatus = "pending";
     raffleNumber.buyerId = null;
     raffleNumber.buyerName = null;
     raffle.soldNumbers = raffle.numbers.filter((item) => item.status === "sold").length;
     writeStore(store);
     return raffleNumber;
   }, { title: "Número liberado", description: "El número está disponible nuevamente." });
+}
+
+export function useSetPaymentStatusWrapper() {
+  return useLocalMutation<RaffleNumber[], { id: number; numbers: number[]; paymentStatus: "pending" | "paid" }>(({ id, numbers, paymentStatus }) => {
+    const store = readStore();
+    const raffle = requireRaffle(store, id);
+    const selected = raffle.numbers.filter((item) => numbers.includes(item.number) && item.status === "sold");
+    if (!selected.length) throw new Error("No se encontraron números vendidos para actualizar.");
+    selected.forEach((number) => { number.paymentStatus = paymentStatus; });
+    writeStore(store);
+    return selected;
+  }, {
+    title: "Estado de pago actualizado",
+    description: "El cambio quedó guardado en este dispositivo.",
+  });
 }
 
 export function useDrawRaffleWrapper() {

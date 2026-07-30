@@ -448,6 +448,9 @@ components:
         status:
           type: string
           enum: [available, sold]
+        paymentStatus:
+          type: string
+          enum: [pending, paid]
         buyerId:
           type: integer
           nullable: true
@@ -459,6 +462,7 @@ components:
         - raffleId
         - number
         - status
+        - paymentStatus
 
     Buyer:
       type: object

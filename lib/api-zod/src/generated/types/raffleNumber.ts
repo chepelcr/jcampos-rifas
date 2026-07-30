@@ -5,6 +5,7 @@
  * Raffle Management API
  * OpenAPI spec version: 0.1.0
  */
+import type { RaffleNumberPaymentStatus } from "./raffleNumberPaymentStatus";
 import type { RaffleNumberStatus } from "./raffleNumberStatus";
 
 export interface RaffleNumber {
@@ -12,6 +13,7 @@ export interface RaffleNumber {
   raffleId: number;
   number: number;
   status: RaffleNumberStatus;
+  paymentStatus: RaffleNumberPaymentStatus;
   buyerId?: number | null;
   buyerName?: string | null;
 }
