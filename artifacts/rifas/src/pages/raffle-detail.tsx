@@ -47,8 +47,12 @@ export default function RaffleDetail() {
     gradient.addColorStop(1, settingsColor("--accent"))
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, 285)
     ctx.fillStyle = settingsColor("--brand-foreground"); ctx.font = "700 58px system-ui"; ctx.fillText(raffle.name.slice(0, 32), 70, 105)
+    const drawDate = raffle.drawDate
+      ? format(new Date(raffle.drawDate), "d 'de' MMMM, yyyy", { locale: es })
+      : "Por definir"
     ctx.font = "30px system-ui"; ctx.fillText(`Precio: ${formatCurrency(raffle.pricePerNumber)}`, 70, 175)
-    ctx.fillText(`Vendidos: ${raffle.soldNumbers} de ${raffle.totalNumbers}`, 70, 225)
+    ctx.fillText(`Fecha del sorteo: ${drawDate}`, 70, 220)
+    ctx.fillText(`Vendidos: ${raffle.soldNumbers} de ${raffle.totalNumbers}`, 70, 265)
     ctx.fillStyle = "#171717"; ctx.font = "700 34px system-ui"; ctx.fillText("Números de la rifa", 70, 355)
     const sold = new Set(numbers?.filter(n => n.status === "sold").map(n => n.number) ?? [])
     const size = 88, gap = 18, startX = 70, startY = 405
@@ -72,7 +76,7 @@ export default function RaffleDetail() {
 
   const handleDownloadPdf = async () => {
     setExporting("pdf")
-    try { const canvas = createRaffleCanvas(); const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] }); pdf.addImage(canvas, "PNG", 0, 0, canvas.width, canvas.height); downloadBlob(pdf.output("blob"), `${raffle?.name ?? "rifa"}.pdf`); toast({ title: "PDF generado", description: "Revisa las descargas de tu dispositivo." }) }
+    try { const canvas = createRaffleCanvas(); const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height], compress: true }); const image = canvas.toDataURL("image/jpeg", 0.82); pdf.addImage(image, "JPEG", 0, 0, canvas.width, canvas.height, undefined, "FAST"); downloadBlob(pdf.output("blob"), `${raffle?.name ?? "rifa"}.pdf`); toast({ title: "PDF generado", description: "Revisa las descargas de tu dispositivo." }) }
     catch (error) { toast({ variant: "destructive", title: "No se pudo generar el PDF", description: error instanceof Error ? error.message : "Intenta nuevamente." }) }
     finally { setExporting(null) }
   }
