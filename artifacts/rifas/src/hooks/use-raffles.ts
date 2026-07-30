@@ -165,6 +165,33 @@ export function useAssignNumberWrapper() {
   }, { title: "Número asignado", description: "La asignación quedó guardada en el dispositivo." });
 }
 
+export function useAssignNumbersWrapper() {
+  return useLocalMutation<RaffleNumber[], { id: number; numbers: number[]; data: AssignNumberInput }>(({ id, numbers, data }) => {
+    const store = readStore();
+    const raffle = requireRaffle(store, id);
+    const uniqueNumbers = [...new Set(numbers)];
+    if (!uniqueNumbers.length) throw new Error("Selecciona al menos un número.");
+    const selected = uniqueNumbers.map((number) => raffle.numbers.find((item) => item.number === number));
+    if (selected.some((number) => !number || number.status === "sold")) {
+      throw new Error("Uno de los números seleccionados ya no está disponible.");
+    }
+    let buyer = raffle.buyers.find((item) => item.name.trim().toLocaleLowerCase() === data.buyerName.trim().toLocaleLowerCase());
+    if (!buyer) {
+      buyer = { id: store.nextBuyerId++, raffleId: id, name: data.buyerName.trim(), phone: data.buyerPhone || null, email: data.buyerEmail || null, numbers: [], createdAt: new Date().toISOString() };
+      raffle.buyers.push(buyer);
+    }
+    const assigned = selected as RaffleNumber[];
+    assigned.forEach((raffleNumber) => {
+      raffleNumber.status = "sold";
+      raffleNumber.buyerId = buyer.id;
+      raffleNumber.buyerName = buyer.name;
+    });
+    raffle.soldNumbers = raffle.numbers.filter((item) => item.status === "sold").length;
+    writeStore(store);
+    return assigned;
+  }, { title: "Números asignados", description: "Todas las asignaciones quedaron guardadas en el dispositivo." });
+}
+
 export function useReleaseNumberWrapper() {
   return useLocalMutation<RaffleNumber, { id: number; number: number }>(({ id, number }) => {
     const store = readStore();

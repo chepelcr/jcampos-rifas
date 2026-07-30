@@ -33,6 +33,7 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-brand-foreground: hsl(var(--brand-foreground));
 
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
@@ -77,6 +78,7 @@
   --border: 30 20% 85%;
   --input: 30 20% 85%;
   --ring: 345 85% 55%;
+  --brand-foreground: 0 0% 100%;
   
   --radius: 1rem;
 }

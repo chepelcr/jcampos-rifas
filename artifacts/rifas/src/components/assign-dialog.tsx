@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAssignNumberWrapper } from "@/hooks/use-raffles"
+import { useAssignNumbersWrapper } from "@/hooks/use-raffles"
 import { Loader2, User } from "lucide-react"
 
 const schema = z.object({
@@ -24,12 +24,13 @@ const schema = z.object({
 type AssignProps = {
   isOpen: boolean
   onClose: () => void
+  onAssigned?: () => void
   raffleId: number
-  number: number
+  numbers: number[]
 }
 
-export function AssignDialog({ isOpen, onClose, raffleId, number }: AssignProps) {
-  const assignMutation = useAssignNumberWrapper()
+export function AssignDialog({ isOpen, onClose, onAssigned, raffleId, numbers }: AssignProps) {
+  const assignMutation = useAssignNumbersWrapper()
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
@@ -37,10 +38,11 @@ export function AssignDialog({ isOpen, onClose, raffleId, number }: AssignProps)
 
   const onSubmit = (data: z.infer<typeof schema>) => {
     assignMutation.mutate(
-      { id: raffleId, number, data },
+      { id: raffleId, numbers, data },
       {
         onSuccess: () => {
           reset()
+          onAssigned?.()
           onClose()
         }
       }
@@ -51,13 +53,16 @@ export function AssignDialog({ isOpen, onClose, raffleId, number }: AssignProps)
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-3xl font-display font-bold mx-auto mb-4 shadow-lg shadow-primary/30">
-            {number}
+          <div className="min-w-16 h-16 px-5 rounded-2xl bg-gradient-to-br from-primary to-accent text-brand-foreground flex items-center justify-center text-2xl font-display font-bold mx-auto mb-4 shadow-lg shadow-primary/30">
+            {numbers.length} {numbers.length === 1 ? "número" : "números"}
           </div>
-          <DialogTitle className="text-center text-3xl">Asignar Número</DialogTitle>
+          <DialogTitle className="text-center text-3xl">Asignar números</DialogTitle>
           <DialogDescription className="text-center text-base">
-            Ingresa los datos del comprador para apartar este número.
+            Ingresa los datos del comprador para asignar todos los números seleccionados.
           </DialogDescription>
+          <div className="flex flex-wrap justify-center gap-2 pt-2" aria-label="Números seleccionados">
+            {numbers.map((number) => <span key={number} className="rounded-lg bg-muted px-2.5 py-1 font-mono font-bold">{String(number).padStart(2, "0")}</span>)}
+          </div>
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
@@ -85,7 +90,7 @@ export function AssignDialog({ isOpen, onClose, raffleId, number }: AssignProps)
           <div className="pt-6">
             <Button type="submit" size="lg" className="w-full text-lg" disabled={assignMutation.isPending}>
               {assignMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
-              Confirmar Asignación
+              Confirmar {numbers.length === 1 ? "asignación" : `${numbers.length} asignaciones`}
             </Button>
           </div>
         </form>

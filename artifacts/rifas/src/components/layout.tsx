@@ -43,7 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-background/80 border-b border-border/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform"><Ticket className="w-6 h-6 text-white" /></div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent text-brand-foreground flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform"><Ticket className="w-6 h-6" /></div>
             <span className="font-display font-bold text-xl sm:text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">{settings.appName}</span>
           </Link>
           <nav className="flex items-center gap-2">

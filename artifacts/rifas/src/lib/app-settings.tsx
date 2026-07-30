@@ -7,6 +7,7 @@ export type AppSettings = {
   appName: string;
   primaryColor: string;
   accentColor: string;
+  theme: "light" | "dark" | "system";
 };
 
 const defaults: AppSettings = {
@@ -14,6 +15,7 @@ const defaults: AppSettings = {
   appName: "Gestor de Rifas",
   primaryColor: "#e62e62",
   accentColor: "#f7bd1b",
+  theme: "system",
 };
 
 function loadSettings(): AppSettings {
@@ -39,6 +41,14 @@ function hexToHsl(hex: string) {
   return `${Math.round(h < 0 ? h + 360 : h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+function contrastHsl(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((start) => {
+    const value = parseInt(hex.slice(start, start + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.42 ? "330 20% 10%" : "0 0% 100%";
+}
+
 type SettingsContextValue = { settings: AppSettings; saveSettings: (value: AppSettings) => void };
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
@@ -53,9 +63,24 @@ export function AppSettingsProvider({ children }: { children: React.ReactNode })
     document.documentElement.style.setProperty("--primary", hexToHsl(settings.primaryColor));
     document.documentElement.style.setProperty("--ring", hexToHsl(settings.primaryColor));
     document.documentElement.style.setProperty("--accent", hexToHsl(settings.accentColor));
+    document.documentElement.style.setProperty("--primary-foreground", contrastHsl(settings.primaryColor));
+    document.documentElement.style.setProperty("--accent-foreground", contrastHsl(settings.accentColor));
+    document.documentElement.style.setProperty("--brand-foreground", contrastHsl(settings.primaryColor));
     document.title = settings.appName;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", settings.primaryColor);
   }, [settings]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const dark = settings.theme === "dark" || (settings.theme === "system" && media.matches);
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    };
+    applyTheme();
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [settings.theme]);
 
   const value = useMemo(() => ({ settings, saveSettings }), [settings]);
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

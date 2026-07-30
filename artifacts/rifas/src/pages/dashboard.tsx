@@ -66,7 +66,7 @@ export default function Dashboard() {
             <Sparkles className="w-3 h-3 mr-2" />
             Panel de Control
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-display font-extrabold mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-display font-extrabold mb-4 leading-tight text-background">
             Gestiona tus rifas con <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">estilo y facilidad</span>
           </h1>
           <p className="text-lg text-muted/80 mb-8 max-w-xl">
@@ -155,7 +155,7 @@ export default function Dashboard() {
                   </CardContent>
                   <CardFooter className="pt-0 border-t border-border/50 mt-auto flex justify-between items-center bg-muted/10 rounded-b-2xl p-4">
                     <span className="text-sm font-semibold text-primary">Gestionar rifa</span>
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors text-primary">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors text-primary">
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </CardFooter>
