@@ -14,6 +14,8 @@ import { BuyerInfoDialog } from "@/components/buyer-info-dialog"
 import { EditPrizesDialog } from "@/components/edit-prizes-dialog"
 import { RaffleNumber } from "@workspace/api-client-react"
 import confetti from "canvas-confetti"
+import html2canvas from "html2canvas"
+import { jsPDF } from "jspdf"
 
 export default function RaffleDetail() {
   const [, params] = useRoute("/raffles/:id")
@@ -30,12 +32,25 @@ export default function RaffleDetail() {
   const [activeTab, setActiveTab] = useState<'numbers' | 'buyers'>('numbers')
   const [editPrizesOpen, setEditPrizesOpen] = useState(false)
 
-  const handleDownloadPdf = () => {
-    window.open(`/api/raffles/${raffleId}/export/pdf`, '_blank')
+  const captureRaffle = async () => {
+    const target = document.querySelector("main") as HTMLElement | null
+    if (!target) throw new Error("No se pudo capturar la rifa")
+    return html2canvas(target, { scale: 2, backgroundColor: "#fffaf7", useCORS: true })
   }
 
-  const handleDownloadImage = () => {
-    window.open(`/api/raffles/${raffleId}/export/image`, '_blank')
+  const handleDownloadPdf = async () => {
+    const canvas = await captureRaffle()
+    const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] })
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, canvas.width, canvas.height)
+    pdf.save(`${raffle?.name ?? "rifa"}.pdf`)
+  }
+
+  const handleDownloadImage = async () => {
+    const canvas = await captureRaffle()
+    const link = document.createElement("a")
+    link.download = `${raffle?.name ?? "rifa"}.png`
+    link.href = canvas.toDataURL("image/png")
+    link.click()
   }
   const [selectedNumToAssign, setSelectedNumToAssign] = useState<number | null>(null)
   const [selectedSoldNum, setSelectedSoldNum] = useState<RaffleNumber | null>(null)

@@ -1,4 +1,5 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,8 @@ import Dashboard from "@/pages/dashboard";
 import CreateRaffle from "@/pages/create-raffle";
 import RaffleDetail from "@/pages/raffle-detail";
 import NotFound from "@/pages/not-found";
+import Setup from "@/pages/setup";
+import { AppSettingsProvider, useAppSettings } from "@/lib/app-settings";
 
 const queryClient = new QueryClient();
 
@@ -24,10 +27,16 @@ function Router() {
 }
 
 function App() {
+  return <AppSettingsProvider><ConfiguredApp /></AppSettingsProvider>;
+}
+
+function ConfiguredApp() {
+  const { settings } = useAppSettings();
+  if (!settings.configured) return <Setup />;
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter hook={useHashLocation}>
           <Router />
         </WouterRouter>
         <Toaster />
