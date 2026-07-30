@@ -4,9 +4,7 @@ import { useRaffle, useRaffleNumbers, useRaffleBuyers, useDrawRaffleWrapper, use
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { formatCurrency } from "@/lib/utils"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { formatCurrency, formatRaffleDate } from "@/lib/utils"
 import { ArrowLeft, Download, Image as ImageIcon, Users, User, Ticket, CheckCircle2, Trophy, Loader2, Sparkles, X, Trash2, Phone, Mail, Pencil } from "lucide-react"
 import { Link, useLocation } from "wouter"
 import { AssignDialog } from "@/components/assign-dialog"
@@ -16,6 +14,7 @@ import { RaffleNumber } from "@workspace/api-client-react"
 import confetti from "canvas-confetti"
 import { jsPDF } from "jspdf"
 import { useToast } from "@/hooks/use-toast"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 export default function RaffleDetail() {
   const [, params] = useRoute("/raffles/:id")
@@ -33,6 +32,8 @@ export default function RaffleDetail() {
   const [editPrizesOpen, setEditPrizesOpen] = useState(false)
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([])
   const [exporting, setExporting] = useState<"pdf" | "image" | null>(null)
+  const [drawDialogOpen, setDrawDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { toast } = useToast()
 
   const createRaffleCanvas = () => {
@@ -47,8 +48,12 @@ export default function RaffleDetail() {
     gradient.addColorStop(1, settingsColor("--accent"))
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, 285)
     ctx.fillStyle = settingsColor("--brand-foreground"); ctx.font = "700 58px system-ui"; ctx.fillText(raffle.name.slice(0, 32), 70, 105)
+    const drawDate = raffle.drawDate
+      ? formatRaffleDate(raffle.drawDate, "d 'de' MMMM, yyyy")
+      : "Por definir"
     ctx.font = "30px system-ui"; ctx.fillText(`Precio: ${formatCurrency(raffle.pricePerNumber)}`, 70, 175)
-    ctx.fillText(`Vendidos: ${raffle.soldNumbers} de ${raffle.totalNumbers}`, 70, 225)
+    ctx.fillText(`Fecha del sorteo: ${drawDate}`, 70, 220)
+    ctx.fillText(`Vendidos: ${raffle.soldNumbers} de ${raffle.totalNumbers}`, 70, 265)
     ctx.fillStyle = "#171717"; ctx.font = "700 34px system-ui"; ctx.fillText("Números de la rifa", 70, 355)
     const sold = new Set(numbers?.filter(n => n.status === "sold").map(n => n.number) ?? [])
     const size = 88, gap = 18, startX = 70, startY = 405
@@ -72,7 +77,7 @@ export default function RaffleDetail() {
 
   const handleDownloadPdf = async () => {
     setExporting("pdf")
-    try { const canvas = createRaffleCanvas(); const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] }); pdf.addImage(canvas, "PNG", 0, 0, canvas.width, canvas.height); downloadBlob(pdf.output("blob"), `${raffle?.name ?? "rifa"}.pdf`); toast({ title: "PDF generado", description: "Revisa las descargas de tu dispositivo." }) }
+    try { const canvas = createRaffleCanvas(); const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height], compress: true }); const image = canvas.toDataURL("image/jpeg", 0.82); pdf.addImage(image, "JPEG", 0, 0, canvas.width, canvas.height, undefined, "FAST"); downloadBlob(pdf.output("blob"), `${raffle?.name ?? "rifa"}.pdf`); toast({ title: "PDF generado", description: "Revisa las descargas de tu dispositivo." }) }
     catch (error) { toast({ variant: "destructive", title: "No se pudo generar el PDF", description: error instanceof Error ? error.message : "Intenta nuevamente." }) }
     finally { setExporting(null) }
   }
@@ -90,26 +95,23 @@ export default function RaffleDetail() {
   if (error || !raffle) return <div className="text-center py-20">Error al cargar la rifa</div>
 
   const handleDraw = () => {
-    if (confirm("¿Estás seguro de realizar el sorteo ahora? Esta acción no se puede deshacer.")) {
-      drawMutation.mutate({ id: raffleId }, {
-        onSuccess: () => {
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#ff512f', '#f09819', '#ffffff']
-          });
-        }
-      })
-    }
+    drawMutation.mutate({ id: raffleId }, {
+      onSuccess: () => {
+        setDrawDialogOpen(false)
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ff512f', '#f09819', '#ffffff']
+        });
+      }
+    })
   }
 
   const handleDelete = () => {
-    if (confirm("¿Eliminar toda la rifa? Se perderán todos los datos. Escribe 'ELIMINAR' para confirmar.") /* Simplified prompt */) {
-      deleteMutation.mutate({ id: raffleId }, {
-        onSuccess: () => setLocation("/")
-      })
-    }
+    deleteMutation.mutate({ id: raffleId }, {
+      onSuccess: () => setLocation("/")
+    })
   }
 
   // Create an array of 100 elements for the grid 0-99
@@ -132,7 +134,7 @@ export default function RaffleDetail() {
           <Button variant="outline" className="bg-card" onClick={handleDownloadImage} disabled={exporting !== null}>
             {exporting === "image" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />} Imagen
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={handleDelete}>
+          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="w-5 h-5" />
           </Button>
         </div>
@@ -165,7 +167,7 @@ export default function RaffleDetail() {
                     <div className="p-3 bg-white/20 rounded-full"><Trophy className="w-6 h-6" /></div>
                     <div>
                       <p className="text-brand-foreground/70 text-sm">Sorteo</p>
-                      <p className="text-xl font-bold">{format(new Date(raffle.drawDate), "d MMM, yyyy", { locale: es })}</p>
+                      <p className="text-xl font-bold">{formatRaffleDate(raffle.drawDate, "d MMM, yyyy")}</p>
                     </div>
                   </div>
                 )}
@@ -177,7 +179,7 @@ export default function RaffleDetail() {
                 size="lg" 
                 variant="secondary"
                 className="rounded-full shadow-2xl shadow-black/20 hover:scale-105"
-                onClick={handleDraw}
+                onClick={() => setDrawDialogOpen(true)}
                 disabled={raffle.soldNumbers === 0 || drawMutation.isPending}
               >
                 {drawMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Sparkles className="w-5 h-5 mr-2" />}
@@ -401,6 +403,42 @@ export default function RaffleDetail() {
           raffle={raffle}
         />
       )}
+
+      <AlertDialog open={drawDialogOpen} onOpenChange={setDrawDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Realizar el sorteo ahora?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se elegirán los ganadores entre los números vendidos y la rifa quedará finalizada. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={drawMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={(event) => { event.preventDefault(); handleDraw() }} disabled={drawMutation.isPending}>
+              {drawMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Realizar sorteo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta rifa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán permanentemente la rifa, sus compradores, números asignados y resultados. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={(event) => { event.preventDefault(); handleDelete() }} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Eliminar rifa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

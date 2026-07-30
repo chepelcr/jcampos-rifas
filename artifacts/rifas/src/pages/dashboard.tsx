@@ -1,9 +1,7 @@
 import { useRaffles } from "@/hooks/use-raffles"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { formatCurrency } from "@/lib/utils"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { formatCurrency, formatRaffleDate } from "@/lib/utils"
 import { Link } from "wouter"
 import { Ticket, Calendar, Users, Trophy, ChevronRight, Loader2, Sparkles, PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -123,7 +121,7 @@ export default function Dashboard() {
                     {raffle.drawDate && (
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4 mr-2 text-primary/70" />
-                        <span>Sorteo: {format(new Date(raffle.drawDate), "d 'de' MMMM, yyyy", { locale: es })}</span>
+                        <span>Sorteo: {formatRaffleDate(raffle.drawDate, "d 'de' MMMM, yyyy")}</span>
                       </div>
                     )}
                     
