@@ -1,0 +1,14 @@
+{
+  "name": "Gestor de Rifas",
+  "short_name": "Rifas",
+  "description": "Gestiona rifas y compradores sin depender de un servidor.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fffaf7",
+  "theme_color": "#e62e62",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

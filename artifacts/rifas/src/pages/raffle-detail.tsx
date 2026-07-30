@@ -14,6 +14,8 @@ import { BuyerInfoDialog } from "@/components/buyer-info-dialog"
 import { EditPrizesDialog } from "@/components/edit-prizes-dialog"
 import { RaffleNumber } from "@workspace/api-client-react"
 import confetti from "canvas-confetti"
+import { jsPDF } from "jspdf"
+import { useToast } from "@/hooks/use-toast"
 
 export default function RaffleDetail() {
   const [, params] = useRoute("/raffles/:id")
@@ -29,15 +31,59 @@ export default function RaffleDetail() {
 
   const [activeTab, setActiveTab] = useState<'numbers' | 'buyers'>('numbers')
   const [editPrizesOpen, setEditPrizesOpen] = useState(false)
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([])
+  const [exporting, setExporting] = useState<"pdf" | "image" | null>(null)
+  const { toast } = useToast()
 
-  const handleDownloadPdf = () => {
-    window.open(`/api/raffles/${raffleId}/export/pdf`, '_blank')
+  const createRaffleCanvas = () => {
+    if (!raffle) throw new Error("No se encontró la rifa")
+    const canvas = document.createElement("canvas")
+    canvas.width = 1200; canvas.height = 1550
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("Este navegador no permite generar imágenes")
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0)
+    gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue("--primary") ? settingsColor("--primary") : "#e62e62")
+    gradient.addColorStop(1, settingsColor("--accent"))
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, 285)
+    ctx.fillStyle = settingsColor("--brand-foreground"); ctx.font = "700 58px system-ui"; ctx.fillText(raffle.name.slice(0, 32), 70, 105)
+    ctx.font = "30px system-ui"; ctx.fillText(`Precio: ${formatCurrency(raffle.pricePerNumber)}`, 70, 175)
+    ctx.fillText(`Vendidos: ${raffle.soldNumbers} de ${raffle.totalNumbers}`, 70, 225)
+    ctx.fillStyle = "#171717"; ctx.font = "700 34px system-ui"; ctx.fillText("Números de la rifa", 70, 355)
+    const sold = new Set(numbers?.filter(n => n.status === "sold").map(n => n.number) ?? [])
+    const size = 88, gap = 18, startX = 70, startY = 405
+    for (let number = 0; number < 100; number++) {
+      const x = startX + (number % 10) * (size + gap), y = startY + Math.floor(number / 10) * (size + gap)
+      ctx.fillStyle = sold.has(number) ? "#e5e7eb" : "#ffffff"; ctx.strokeStyle = sold.has(number) ? "#9ca3af" : settingsColor("--primary"); ctx.lineWidth = 3
+      ctx.beginPath(); ctx.roundRect(x, y, size, size, 14); ctx.fill(); ctx.stroke()
+      ctx.fillStyle = sold.has(number) ? "#6b7280" : "#171717"; ctx.font = "700 28px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(number).padStart(2, "0"), x + size / 2, y + size / 2)
+    }
+    ctx.textAlign = "left"; ctx.fillStyle = "#525252"; ctx.font = "24px system-ui"; ctx.fillText("Los números sombreados ya están vendidos.", 70, 1510)
+    return canvas
   }
 
-  const handleDownloadImage = () => {
-    window.open(`/api/raffles/${raffleId}/export/image`, '_blank')
+  const settingsColor = (name: string) => `hsl(${getComputedStyle(document.documentElement).getPropertyValue(name).trim()})`
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob); const link = document.createElement("a")
+    link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
-  const [selectedNumToAssign, setSelectedNumToAssign] = useState<number | null>(null)
+
+  const handleDownloadPdf = async () => {
+    setExporting("pdf")
+    try { const canvas = createRaffleCanvas(); const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] }); pdf.addImage(canvas, "PNG", 0, 0, canvas.width, canvas.height); downloadBlob(pdf.output("blob"), `${raffle?.name ?? "rifa"}.pdf`); toast({ title: "PDF generado", description: "Revisa las descargas de tu dispositivo." }) }
+    catch (error) { toast({ variant: "destructive", title: "No se pudo generar el PDF", description: error instanceof Error ? error.message : "Intenta nuevamente." }) }
+    finally { setExporting(null) }
+  }
+
+  const handleDownloadImage = async () => {
+    setExporting("image")
+    try { const canvas = createRaffleCanvas(); const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("No se pudo crear el archivo")), "image/png")); downloadBlob(blob, `${raffle?.name ?? "rifa"}.png`); toast({ title: "Imagen generada", description: "Revisa las descargas de tu dispositivo." }) }
+    catch (error) { toast({ variant: "destructive", title: "No se pudo generar la imagen", description: error instanceof Error ? error.message : "Intenta nuevamente." }) }
+    finally { setExporting(null) }
+  }
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedSoldNum, setSelectedSoldNum] = useState<RaffleNumber | null>(null)
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="w-12 h-12 text-primary animate-spin" /></div>
@@ -75,16 +121,16 @@ export default function RaffleDetail() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-border">
+        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors font-medium bg-card px-4 py-2 rounded-full shadow-sm border border-border">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-white" onClick={handleDownloadPdf}>
-            <Download className="w-4 h-4 mr-2" /> PDF
+          <Button variant="outline" className="bg-card" onClick={handleDownloadPdf} disabled={exporting !== null}>
+            {exporting === "pdf" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />} PDF
           </Button>
-          <Button variant="outline" className="bg-white" onClick={handleDownloadImage}>
-            <ImageIcon className="w-4 h-4 mr-2" /> Imagen
+          <Button variant="outline" className="bg-card" onClick={handleDownloadImage} disabled={exporting !== null}>
+            {exporting === "image" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />} Imagen
           </Button>
           <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={handleDelete}>
             <Trash2 className="w-5 h-5" />
@@ -94,23 +140,23 @@ export default function RaffleDetail() {
 
       {/* Main Info Card */}
       <Card className="overflow-hidden border-0 shadow-2xl">
-        <div className="bg-gradient-to-r from-primary to-accent p-8 text-white relative">
+        <div className="bg-gradient-to-r from-primary to-accent p-8 text-brand-foreground relative">
           <div className="absolute top-0 right-0 p-8 opacity-20">
             <Ticket className="w-32 h-32" />
           </div>
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-4 max-w-2xl">
-              <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md">
+              <Badge className="bg-white/20 hover:bg-white/30 text-brand-foreground border-none backdrop-blur-md">
                 {raffle.status === 'active' ? 'En Curso' : raffle.status === 'completed' ? 'Finalizada' : 'Cancelada'}
               </Badge>
-              <h1 className="text-4xl md:text-5xl font-display font-extrabold">{raffle.name}</h1>
-              {raffle.description && <p className="text-white/80 text-lg">{raffle.description}</p>}
+              <h1 className="text-4xl md:text-5xl font-display font-extrabold text-brand-foreground drop-shadow-sm">{raffle.name}</h1>
+              {raffle.description && <p className="text-brand-foreground/80 text-lg">{raffle.description}</p>}
               
               <div className="flex flex-wrap gap-4 mt-6">
                 <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-full"><Ticket className="w-6 h-6" /></div>
                   <div>
-                    <p className="text-white/70 text-sm">Precio CRC</p>
+                    <p className="text-brand-foreground/70 text-sm">Precio CRC</p>
                     <p className="text-2xl font-bold">{formatCurrency(raffle.pricePerNumber)}</p>
                   </div>
                 </div>
@@ -118,7 +164,7 @@ export default function RaffleDetail() {
                   <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-4">
                     <div className="p-3 bg-white/20 rounded-full"><Trophy className="w-6 h-6" /></div>
                     <div>
-                      <p className="text-white/70 text-sm">Sorteo</p>
+                      <p className="text-brand-foreground/70 text-sm">Sorteo</p>
                       <p className="text-xl font-bold">{format(new Date(raffle.drawDate), "d MMM, yyyy", { locale: es })}</p>
                     </div>
                   </div>
@@ -195,7 +241,7 @@ export default function RaffleDetail() {
 
       {/* Winners Section if completed */}
       {raffle.status === 'completed' && raffle.winners && raffle.winners.length > 0 && (
-        <Card className="border-4 border-accent shadow-xl bg-gradient-to-br from-white to-accent/5 overflow-hidden relative">
+        <Card className="border-4 border-accent shadow-xl bg-gradient-to-br from-card to-accent/5 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <CardContent className="p-8 relative z-10">
             <div className="flex items-center gap-3 mb-6">
@@ -204,8 +250,8 @@ export default function RaffleDetail() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {raffle.winners.map((winner, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-accent/20 flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-2xl font-bold shadow-md shrink-0">
+                <div key={idx} className="bg-card rounded-2xl p-6 shadow-sm border border-accent/20 flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent text-brand-foreground flex items-center justify-center text-2xl font-bold shadow-md shrink-0">
                     {winner.number}
                   </div>
                   <div>
@@ -255,16 +301,16 @@ export default function RaffleDetail() {
                       if (raffle.status !== 'active') return;
                       if (isSold) {
                         setSelectedSoldNum(info)
-                      } else {
-                        setSelectedNumToAssign(num)
-                      }
+                      } else setSelectedNumbers((current) => current.includes(num) ? current.filter((number) => number !== num) : [...current, num].sort((a, b) => a - b))
                     }}
                     disabled={raffle.status !== 'active' && !isSold}
                     className={`
                       aspect-square rounded-xl md:rounded-2xl flex items-center justify-center font-display font-bold text-xl transition-all duration-200
                       ${isSold 
                         ? 'bg-muted border border-border/50 text-muted-foreground cursor-pointer hover:bg-muted/80 shadow-inner relative overflow-hidden' 
-                        : 'bg-white border-2 border-border text-foreground hover:border-primary hover:text-primary hover:shadow-lg hover:-translate-y-1 hover:bg-primary/5 cursor-pointer shadow-sm'
+                        : selectedNumbers.includes(num)
+                          ? 'bg-primary border-2 border-primary text-primary-foreground ring-4 ring-primary/20 shadow-lg cursor-pointer'
+                          : 'bg-card border-2 border-border text-foreground hover:border-primary hover:text-primary hover:shadow-lg hover:-translate-y-1 hover:bg-primary/5 cursor-pointer shadow-sm'
                       }
                       ${raffle.status !== 'active' && !isSold ? 'opacity-50 cursor-not-allowed hover:transform-none hover:border-border hover:shadow-none hover:text-foreground' : ''}
                     `}
@@ -275,6 +321,7 @@ export default function RaffleDetail() {
                          <X className="w-8 h-8 text-foreground/40 stroke-[3]" />
                       </div>
                     )}
+                    {!isSold && selectedNumbers.includes(num) && <CheckCircle2 className="absolute top-1 right-1 w-4 h-4" />}
                   </button>
                 )
               })}
@@ -288,7 +335,7 @@ export default function RaffleDetail() {
                 </div>
               ) : (
                 buyers.map(buyer => (
-                  <div key={buyer.id} className="bg-white p-6 rounded-2xl shadow-sm border border-border flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow">
+                  <div key={buyer.id} className="bg-card p-6 rounded-2xl shadow-sm border border-border flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">
                         {buyer.name.charAt(0).toUpperCase()}
@@ -316,12 +363,25 @@ export default function RaffleDetail() {
         </div>
       </div>
 
-      {selectedNumToAssign !== null && (
+      {selectedNumbers.length > 0 && !assignDialogOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 shadow-[0_-8px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-1 sm:px-6">
+            <Button variant="ghost" onClick={() => setSelectedNumbers([])} className="shrink-0">Limpiar</Button>
+            <p className="hidden flex-1 text-sm text-muted-foreground sm:block"><strong className="text-foreground">{selectedNumbers.length}</strong> {selectedNumbers.length === 1 ? "número seleccionado" : "números seleccionados"}</p>
+            <Button size="lg" className="ml-auto flex-1 sm:flex-none" onClick={() => setAssignDialogOpen(true)}>
+              <User className="mr-2 h-5 w-5" />Asignar {selectedNumbers.length} {selectedNumbers.length === 1 ? "número" : "números"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {assignDialogOpen && selectedNumbers.length > 0 && (
         <AssignDialog 
           isOpen={true} 
-          onClose={() => setSelectedNumToAssign(null)} 
+          onClose={() => setAssignDialogOpen(false)}
+          onAssigned={() => setSelectedNumbers([])}
           raffleId={raffleId} 
-          number={selectedNumToAssign} 
+          numbers={selectedNumbers}
         />
       )}
 
