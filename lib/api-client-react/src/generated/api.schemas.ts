@@ -52,11 +52,20 @@ export const RaffleNumberStatus = {
   sold: "sold",
 } as const;
 
+export type RaffleNumberPaymentStatus =
+  (typeof RaffleNumberPaymentStatus)[keyof typeof RaffleNumberPaymentStatus];
+
+export const RaffleNumberPaymentStatus = {
+  pending: "pending",
+  paid: "paid",
+} as const;
+
 export interface RaffleNumber {
   id: number;
   raffleId: number;
   number: number;
   status: RaffleNumberStatus;
+  paymentStatus: RaffleNumberPaymentStatus;
   buyerId?: number | null;
   buyerName?: string | null;
 }

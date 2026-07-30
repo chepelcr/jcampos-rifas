@@ -4,78 +4,119 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { useReleaseNumberWrapper } from "@/hooks/use-raffles"
-import { Phone, Mail, User, Unlock, Loader2 } from "lucide-react"
-import { RaffleNumber } from "@workspace/api-client-react"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useReleaseNumberWrapper } from "@/hooks/use-raffles";
+import { downloadBuyerConfirmation } from "@/lib/buyer-confirmation";
+import { Download, Loader2, Unlock, User } from "lucide-react";
+import type { Buyer, Raffle, RaffleNumber } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
-  isOpen: boolean
-  onClose: () => void
-  raffleId: number
-  numberInfo: RaffleNumber | null
-}
+  isOpen: boolean;
+  onClose: () => void;
+  raffle: Raffle;
+  buyer: Buyer | null;
+  numbers: RaffleNumber[];
+  numberInfo: RaffleNumber | null;
+};
 
-export function BuyerInfoDialog({ isOpen, onClose, raffleId, numberInfo }: Props) {
-  const releaseMutation = useReleaseNumberWrapper()
+export function BuyerInfoDialog({
+  isOpen,
+  onClose,
+  raffle,
+  buyer,
+  numbers,
+  numberInfo,
+}: Props) {
+  const releaseMutation = useReleaseNumberWrapper();
+  const { toast } = useToast();
 
-  if (!numberInfo) return null
+  if (!numberInfo) return null;
 
   const handleRelease = () => {
-    if (confirm(`¿Estás seguro de liberar el número ${numberInfo.number}? Perderá su dueño actual.`)) {
-      releaseMutation.mutate(
-        { id: raffleId, number: numberInfo.number },
-        { onSuccess: onClose }
+    if (
+      confirm(
+        `¿Estás seguro de liberar el número ${numberInfo.number}? Perderá su dueño actual.`,
       )
+    ) {
+      releaseMutation.mutate(
+        { id: raffle.id, number: numberInfo.number },
+        { onSuccess: onClose },
+      );
     }
-  }
+  };
+
+  const handleConfirmation = async () => {
+    if (!buyer) return;
+    try {
+      await downloadBuyerConfirmation(raffle, buyer, numbers);
+      toast({
+        title: "Confirmación descargada",
+        description: "La imagen está lista para enviarla al comprador.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "No se pudo crear la confirmación",
+        description:
+          error instanceof Error ? error.message : "Intenta nuevamente.",
+      });
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-center gap-4 mb-4">
-             <div className="w-16 h-16 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center text-3xl font-display font-bold shadow-inner">
-              {numberInfo.number}
-            </div>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-3xl font-bold text-muted-foreground shadow-inner">
+            {numberInfo.number}
           </div>
-          <DialogTitle className="text-center text-2xl">Número Vendido</DialogTitle>
+          <DialogTitle className="text-center text-2xl">
+            Número vendido
+          </DialogTitle>
           <DialogDescription className="text-center">
-            Información del comprador actual.
+            Consulta el comprador, descarga su confirmación o libera el número.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="bg-secondary/10 rounded-2xl p-6 mt-4 border border-secondary/20 space-y-4">
+        <div className="mt-4 space-y-4 rounded-2xl border border-secondary/20 bg-secondary/10 p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-secondary/20 text-secondary-foreground flex items-center justify-center shrink-0">
-              <User className="w-5 h-5" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary-foreground">
+              <User className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Comprador</p>
-              <p className="font-bold text-lg">{numberInfo.buyerName || "Desconocido"}</p>
+              <p className="text-lg font-bold">
+                {buyer?.name || numberInfo.buyerName || "Desconocido"}
+              </p>
             </div>
           </div>
-          
-          {/* Note: the API returns minimal info on the number object, we'd ideally fetch full buyer details, 
-              but for this UI we display what we have or generic placeholders if not available on this object directly */}
         </div>
-
-        <div className="pt-6">
-          <Button 
-            variant="destructive" 
-            className="w-full bg-red-100 text-red-700 hover:bg-red-200 border-none shadow-none" 
+        <div className="space-y-3 pt-4">
+          <Button
+            className="w-full"
+            variant="secondary"
+            disabled={!buyer}
+            onClick={handleConfirmation}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Descargar confirmación del comprador
+          </Button>
+          <Button
+            variant="destructive"
+            className="w-full border-none bg-red-100 text-red-700 shadow-none hover:bg-red-200"
             onClick={handleRelease}
             disabled={releaseMutation.isPending}
           >
-            {releaseMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Unlock className="w-4 h-4 mr-2" />}
-            Liberar Número
+            {releaseMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Unlock className="mr-2 h-4 w-4" />
+            )}
+            Liberar número
           </Button>
-          <p className="text-xs text-center text-muted-foreground mt-3">
-            Liberar el número lo pondrá disponible para otra persona.
-          </p>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

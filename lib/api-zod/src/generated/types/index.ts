@@ -16,6 +16,7 @@ export * from "./healthStatus";
 export * from "./raffle";
 export * from "./raffleDetail";
 export * from "./raffleNumber";
+export * from "./raffleNumberPaymentStatus";
 export * from "./raffleNumberStatus";
 export * from "./raffleStatus";
 export * from "./raffleType";

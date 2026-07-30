@@ -81,6 +81,7 @@ export const GetRaffleResponse = zod
             raffleId: zod.number(),
             number: zod.number(),
             status: zod.enum(["available", "sold"]),
+            paymentStatus: zod.enum(["pending", "paid"]),
             buyerId: zod.number().nullish(),
             buyerName: zod.string().nullish(),
           }),
@@ -185,6 +186,7 @@ export const ListRaffleNumbersResponseItem = zod.object({
   raffleId: zod.number(),
   number: zod.number(),
   status: zod.enum(["available", "sold"]),
+  paymentStatus: zod.enum(["pending", "paid"]),
   buyerId: zod.number().nullish(),
   buyerName: zod.string().nullish(),
 });
@@ -211,6 +213,7 @@ export const AssignNumberResponse = zod.object({
   raffleId: zod.number(),
   number: zod.number(),
   status: zod.enum(["available", "sold"]),
+  paymentStatus: zod.enum(["pending", "paid"]),
   buyerId: zod.number().nullish(),
   buyerName: zod.string().nullish(),
 });
@@ -228,6 +231,7 @@ export const ReleaseNumberResponse = zod.object({
   raffleId: zod.number(),
   number: zod.number(),
   status: zod.enum(["available", "sold"]),
+  paymentStatus: zod.enum(["pending", "paid"]),
   buyerId: zod.number().nullish(),
   buyerName: zod.string().nullish(),
 });
