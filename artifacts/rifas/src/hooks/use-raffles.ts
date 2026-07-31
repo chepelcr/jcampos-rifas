@@ -206,10 +206,14 @@ export function useReleaseNumberWrapper() {
     const raffle = requireRaffle(store, id);
     const raffleNumber = raffle.numbers.find((item) => item.number === number);
     if (!raffleNumber) throw new Error("No se encontró el número.");
+    const releasedBuyerId = raffleNumber.buyerId;
     raffleNumber.status = "available";
     raffleNumber.paymentStatus = "pending";
     raffleNumber.buyerId = null;
     raffleNumber.buyerName = null;
+    if (releasedBuyerId && !raffle.numbers.some((item) => item.buyerId === releasedBuyerId)) {
+      raffle.buyers = raffle.buyers.filter((buyer) => buyer.id !== releasedBuyerId);
+    }
     raffle.soldNumbers = raffle.numbers.filter((item) => item.status === "sold").length;
     writeStore(store);
     return raffleNumber;
