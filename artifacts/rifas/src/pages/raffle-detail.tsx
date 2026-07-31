@@ -34,6 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
+  ChevronDown,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { AssignDialog } from "@/components/assign-dialog";
@@ -56,6 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAppSettings } from "@/lib/app-settings";
 
 export default function RaffleDetail() {
   const [, params] = useRoute("/raffles/:id");
@@ -86,6 +88,7 @@ export default function RaffleDetail() {
   );
   const [buyerPage, setBuyerPage] = useState(1);
   const { toast } = useToast();
+  const { t } = useAppSettings();
 
   const createRaffleCanvas = () => {
     if (!raffle) throw new Error("No se encontró la rifa");
@@ -335,7 +338,7 @@ export default function RaffleDetail() {
       </div>
     );
   if (error || !raffle)
-    return <div className="text-center py-20">Error al cargar la rifa</div>;
+    return <div className="text-center py-20">{t("Error al cargar la rifa")}</div>;
 
   const handleDraw = () => {
     drawMutation.mutate(
@@ -391,7 +394,7 @@ export default function RaffleDetail() {
           className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors font-medium bg-card px-4 py-2 rounded-full shadow-sm border border-border"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
+          {t("Volver")}
         </Link>
         <div className="flex gap-2">
           <Button
@@ -418,7 +421,7 @@ export default function RaffleDetail() {
             ) : (
               <ImageIcon className="w-4 h-4 mr-2" />
             )}{" "}
-            Imagen
+            {t("Imagen")}
           </Button>
           <Button
             variant="outline"
@@ -449,10 +452,10 @@ export default function RaffleDetail() {
             <div className="space-y-4 max-w-2xl">
               <Badge className="bg-white/20 hover:bg-white/30 text-brand-foreground border-none backdrop-blur-md">
                 {raffle.status === "active"
-                  ? "En Curso"
+                  ? t("En Curso")
                   : raffle.status === "completed"
-                    ? "Finalizada"
-                    : "Cancelada"}
+                    ? t("Finalizada")
+                    : t("Cancelada")}
               </Badge>
               <h1 className="text-4xl md:text-5xl font-display font-extrabold text-brand-foreground drop-shadow-sm">
                 {raffle.name}
@@ -470,7 +473,7 @@ export default function RaffleDetail() {
                   </div>
                   <div>
                     <p className="text-brand-foreground/70 text-sm">
-                      Precio CRC
+                      {t("Precio CRC")}
                     </p>
                     <p className="text-2xl font-bold">
                       {formatCurrency(raffle.pricePerNumber)}
@@ -483,7 +486,7 @@ export default function RaffleDetail() {
                       <Trophy className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-brand-foreground/70 text-sm">Sorteo</p>
+                      <p className="text-brand-foreground/70 text-sm">{t("Sorteo")}</p>
                       <p className="text-xl font-bold">
                         {formatRaffleDate(raffle.drawDate, "d MMM, yyyy")}
                       </p>
@@ -506,7 +509,7 @@ export default function RaffleDetail() {
                 ) : (
                   <Sparkles className="w-5 h-5 mr-2" />
                 )}
-                Realizar Sorteo
+                {t("Realizar Sorteo")}
               </Button>
             )}
           </div>
@@ -516,7 +519,7 @@ export default function RaffleDetail() {
         <div className="bg-background p-6 border-b border-border/50">
           <div className="flex justify-between text-sm mb-2 font-medium">
             <span className="text-muted-foreground flex items-center">
-              <Users className="w-4 h-4 mr-2" /> Números Vendidos
+              <Users className="w-4 h-4 mr-2" /> {t("Números Vendidos")}
             </span>
             <span className="text-primary font-bold">
               {raffle.soldNumbers} de {raffle.totalNumbers}
@@ -543,7 +546,7 @@ export default function RaffleDetail() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Trophy className="w-6 h-6 text-accent" />
-                <h2 className="text-xl font-bold">Premios</h2>
+                <h2 className="text-xl font-bold">{t("Premios")}</h2>
               </div>
               {raffle.status === "active" && (
                 <Button
@@ -590,7 +593,7 @@ export default function RaffleDetail() {
               <div className="flex items-center gap-3 mb-6">
                 <Trophy className="w-10 h-10 text-accent drop-shadow-md" />
                 <h2 className="text-3xl font-display font-extrabold text-foreground">
-                  ¡Ganadores!
+                  {t("¡Ganadores!")}
                 </h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -607,11 +610,11 @@ export default function RaffleDetail() {
                         variant="outline"
                         className="mb-2 bg-accent/10 border-accent/30 text-accent-foreground"
                       >
-                        {winner.prize || "Premio"}
+                        {winner.prize || t("Premio")}
                       </Badge>
                       <p className="font-bold text-xl">{winner.buyerName}</p>
                       <p className="text-muted-foreground text-sm">
-                        {winner.buyerPhone || "Sin teléfono"}
+                        {winner.buyerPhone || t("Sin teléfono")}
                       </p>
                     </div>
                   </div>
@@ -628,7 +631,7 @@ export default function RaffleDetail() {
             className={`flex-1 py-4 font-bold text-lg transition-colors relative ${activeTab === "numbers" ? "text-primary" : "text-muted-foreground hover:bg-muted/50"}`}
             onClick={() => setActiveTab("numbers")}
           >
-            Cuadrícula (0-99)
+            {t("Cuadrícula (0-99)")}
             {activeTab === "numbers" && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
             )}
@@ -637,7 +640,7 @@ export default function RaffleDetail() {
             className={`flex-1 py-4 font-bold text-lg transition-colors relative ${activeTab === "buyers" ? "text-primary" : "text-muted-foreground hover:bg-muted/50"}`}
             onClick={() => setActiveTab("buyers")}
           >
-            Compradores ({buyers?.length || 0})
+            {t("Compradores")} ({buyers?.length || 0})
             {activeTab === "buyers" && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
             )}
@@ -649,14 +652,14 @@ export default function RaffleDetail() {
             <div className="space-y-4">
               <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-semibold">Mostrar y descargar</p>
+                  <p className="font-semibold">{t("Mostrar y descargar")}</p>
                   <p className="text-sm text-muted-foreground">
-                    La imagen, el PDF y el Excel usarán esta misma vista.
+                    {t("La imagen, el PDF y el Excel usarán esta misma vista.")}
                   </p>
                 </div>
                 <div
-                  className="flex rounded-xl bg-muted p-1"
-                  aria-label="Filtrar números"
+                  className="grid w-full grid-cols-3 rounded-xl bg-muted p-1 sm:w-auto sm:min-w-[22rem]"
+                  aria-label={t("Filtrar números")}
                 >
                   {(["all", "available", "sold"] as const).map((filter) => (
                     <button
@@ -666,13 +669,13 @@ export default function RaffleDetail() {
                         setNumberFilter(filter);
                         setSelectedNumbers([]);
                       }}
-                      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${numberFilter === filter ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                      className={`w-full rounded-lg px-3 py-2 text-center text-sm font-medium transition ${numberFilter === filter ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       {filter === "all"
-                        ? "Todos"
+                        ? t("Todos")
                         : filter === "available"
-                          ? "Disponibles"
-                          : "Vendidos"}
+                          ? t("Disponibles")
+                          : t("Vendidos")}
                     </button>
                   ))}
                 </div>
@@ -691,7 +694,7 @@ export default function RaffleDetail() {
                       setSelectedNumbers([]);
                     }}
                   >
-                    Cancelar
+                    {t("Cancelar")}
                   </Button>
                 </div>
               )}
@@ -741,7 +744,7 @@ export default function RaffleDetail() {
               <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-3">
                 <div>
                   <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Cobrado
+                    {t("Cobrado")}
                   </p>
                   <p className="text-xl font-bold text-green-700">
                     {formatCurrency(collectedAmount)}
@@ -749,13 +752,13 @@ export default function RaffleDetail() {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Pagados
+                    {t("Pagados")}
                   </p>
                   <p className="text-xl font-bold">{paidNumbers}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Pendientes
+                    {t("Pendientes")}
                   </p>
                   <p className="text-xl font-bold text-amber-700">
                     {pendingNumbers}
@@ -766,7 +769,7 @@ export default function RaffleDetail() {
                     <p className="flex items-center gap-2 text-sm font-medium">
                       <CircleDollarSign className="h-4 w-4" />
                       {collectedAmount >= raffle.singlePrizeAmount
-                        ? "El monto del premio ya está cubierto."
+                        ? t("El monto del premio ya está cubierto.")
                         : `Faltan ${formatCurrency(raffle.singlePrizeAmount - collectedAmount)} para cubrir el premio.`}
                     </p>
                   </div>
@@ -778,35 +781,38 @@ export default function RaffleDetail() {
                   <Input
                     value={buyerSearch}
                     onChange={(event) => setBuyerSearch(event.target.value)}
-                    placeholder="Buscar por nombre o teléfono"
+                    placeholder={t("Buscar por nombre o teléfono")}
                     className="pl-9"
-                    aria-label="Buscar comprador por nombre o teléfono"
+                    aria-label={t("Buscar comprador por nombre o teléfono")}
                   />
                 </div>
                 <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
-                  Ordenar
+                  {t("Ordenar")}
+                  <span className="relative min-w-0 flex-1">
                   <select
                     value={buyerOrder}
                     onChange={(event) =>
                       setBuyerOrder(event.target.value as typeof buyerOrder)
                     }
-                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
+                    className="h-9 w-full appearance-none rounded-md border bg-background pl-3 pr-10 text-sm"
                   >
-                    <option value="recent">Más recientes</option>
-                    <option value="name">Nombre A–Z</option>
-                    <option value="numbers">Más números</option>
+                    <option value="recent">{t("Más recientes")}</option>
+                    <option value="name">{t("Nombre A–Z")}</option>
+                    <option value="numbers">{t("Más números")}</option>
                   </select>
+                  <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  </span>
                 </label>
               </div>
               {!buyers?.length ? (
                 <div className="text-center py-20 text-muted-foreground">
                   <User className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <p className="text-lg">No hay compradores registrados aún.</p>
+                  <p className="text-lg">{t("No hay compradores registrados aún.")}</p>
                 </div>
               ) : filteredBuyers.length === 0 ? (
                 <div className="py-16 text-center text-muted-foreground">
                   <Search className="mx-auto mb-3 h-10 w-10 opacity-25" />
-                  No encontramos compradores con esa búsqueda.
+                  {t("No encontramos compradores con esa búsqueda.")}
                 </div>
               ) : (
                 visibleBuyers.map((buyer) => {
