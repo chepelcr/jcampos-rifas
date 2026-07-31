@@ -11,6 +11,8 @@ import { downloadBuyerConfirmation } from "@/lib/buyer-confirmation";
 import { Download, Loader2, Unlock, User } from "lucide-react";
 import type { Buyer, Raffle, RaffleNumber } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 type Props = {
   isOpen: boolean;
@@ -31,20 +33,15 @@ export function BuyerInfoDialog({
 }: Props) {
   const releaseMutation = useReleaseNumberWrapper();
   const { toast } = useToast();
+  const [releaseConfirmationOpen, setReleaseConfirmationOpen] = useState(false);
 
   if (!numberInfo) return null;
 
   const handleRelease = () => {
-    if (
-      confirm(
-        `¿Estás seguro de liberar el número ${numberInfo.number}? Perderá su dueño actual.`,
-      )
-    ) {
-      releaseMutation.mutate(
-        { id: raffle.id, number: numberInfo.number },
-        { onSuccess: onClose },
-      );
-    }
+    releaseMutation.mutate(
+      { id: raffle.id, number: numberInfo.number },
+      { onSuccess: () => { setReleaseConfirmationOpen(false); onClose(); } },
+    );
   };
 
   const handleConfirmation = async () => {
@@ -105,7 +102,7 @@ export function BuyerInfoDialog({
           <Button
             variant="destructive"
             className="w-full border-none bg-red-100 text-red-700 shadow-none hover:bg-red-200"
-            onClick={handleRelease}
+            onClick={() => setReleaseConfirmationOpen(true)}
             disabled={releaseMutation.isPending}
           >
             {releaseMutation.isPending ? (
@@ -117,6 +114,24 @@ export function BuyerInfoDialog({
           </Button>
         </div>
       </DialogContent>
+      <AlertDialog open={releaseConfirmationOpen} onOpenChange={setReleaseConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Liberar el número {numberInfo.number}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El número quedará disponible y dejará de pertenecer a {buyer?.name ?? "su comprador actual"}.
+              {buyer?.numbers?.length === 1 ? " Como este es su último número, el comprador desaparecerá de la lista." : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={releaseMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={releaseMutation.isPending} onClick={(event) => { event.preventDefault(); handleRelease(); }}>
+              {releaseMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Liberar número
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRoute } from "wouter";
 import {
   useRaffle,
@@ -30,6 +30,10 @@ import {
   Clock3,
   Plus,
   CircleDollarSign,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { AssignDialog } from "@/components/assign-dialog";
@@ -40,6 +44,8 @@ import confetti from "canvas-confetti";
 import { jsPDF } from "jspdf";
 import { useToast } from "@/hooks/use-toast";
 import { downloadBuyerConfirmation } from "@/lib/buyer-confirmation";
+import { Input } from "@/components/ui/input";
+import * as XLSX from "xlsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +77,14 @@ export default function RaffleDetail() {
   const [exporting, setExporting] = useState<"pdf" | "image" | null>(null);
   const [drawDialogOpen, setDrawDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [numberFilter, setNumberFilter] = useState<
+    "all" | "sold" | "available"
+  >("all");
+  const [buyerSearch, setBuyerSearch] = useState("");
+  const [buyerOrder, setBuyerOrder] = useState<"recent" | "name" | "numbers">(
+    "recent",
+  );
+  const [buyerPage, setBuyerPage] = useState(1);
   const { toast } = useToast();
 
   const createRaffleCanvas = () => {
@@ -112,13 +126,21 @@ export default function RaffleDetail() {
     const sold = new Set(
       numbers?.filter((n) => n.status === "sold").map((n) => n.number) ?? [],
     );
+    const canvasNumbers = Array.from(
+      { length: 100 },
+      (_, number) => number,
+    ).filter(
+      (number) =>
+        numberFilter === "all" ||
+        (numberFilter === "sold" ? sold.has(number) : !sold.has(number)),
+    );
     const size = 88,
       gap = 18,
       startX = 70,
       startY = 405;
-    for (let number = 0; number < 100; number++) {
-      const x = startX + (number % 10) * (size + gap),
-        y = startY + Math.floor(number / 10) * (size + gap);
+    for (const [index, number] of canvasNumbers.entries()) {
+      const x = startX + (index % 10) * (size + gap),
+        y = startY + Math.floor(index / 10) * (size + gap);
       ctx.fillStyle = sold.has(number) ? "#e5e7eb" : "#ffffff";
       ctx.strokeStyle = sold.has(number)
         ? "#9ca3af"
@@ -137,7 +159,13 @@ export default function RaffleDetail() {
     ctx.textAlign = "left";
     ctx.fillStyle = "#525252";
     ctx.font = "24px system-ui";
-    ctx.fillText("Los números sombreados ya están vendidos.", 70, 1510);
+    const modeLabel =
+      numberFilter === "all"
+        ? "Todos los números"
+        : numberFilter === "sold"
+          ? "Números vendidos"
+          : "Números disponibles";
+    ctx.fillText(`${modeLabel} · ${canvasNumbers.length} en total`, 70, 1510);
     return canvas;
   };
 
@@ -222,10 +250,83 @@ export default function RaffleDetail() {
       setExporting(null);
     }
   };
+
+  const handleDownloadExcel = () => {
+    if (!numbers || !buyers) return;
+    const buyerById = new Map(buyers.map((buyer) => [buyer.id, buyer]));
+    const rows = numbers
+      .filter((item) => numberFilter === "all" || item.status === numberFilter)
+      .sort((a, b) => a.number - b.number)
+      .map((item) => {
+        const buyer = item.buyerId ? buyerById.get(item.buyerId) : undefined;
+        return {
+          Número: item.number,
+          Estado: item.status === "sold" ? "Vendido" : "Disponible",
+          Pago:
+            item.status === "sold"
+              ? item.paymentStatus === "paid"
+                ? "Pagado"
+                : "Pendiente"
+              : "—",
+          Comprador: buyer?.name ?? "",
+          Teléfono: buyer?.phone ?? "",
+          Email: buyer?.email ?? "",
+        };
+      });
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    sheet["!cols"] = [
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 30 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Números");
+    XLSX.writeFile(workbook, `${raffle?.name ?? "rifa"}-${numberFilter}.xlsx`);
+    toast({
+      title: "Excel generado",
+      description: "La descarga respeta el filtro seleccionado.",
+    });
+  };
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedSoldNum, setSelectedSoldNum] = useState<RaffleNumber | null>(
     null,
   );
+
+  const filteredBuyers = useMemo(() => {
+    const query = buyerSearch.trim().toLocaleLowerCase();
+    return [...(buyers ?? [])]
+      .filter(
+        (buyer) =>
+          !query ||
+          buyer.name.toLocaleLowerCase().includes(query) ||
+          buyer.phone?.toLocaleLowerCase().includes(query),
+      )
+      .sort((a, b) => {
+        if (buyerOrder === "name") return a.name.localeCompare(b.name, "es");
+        if (buyerOrder === "numbers")
+          return (b.numbers?.length ?? 0) - (a.numbers?.length ?? 0);
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+  }, [buyerOrder, buyerSearch, buyers]);
+  const buyersPerPage = 6;
+  const buyerPageCount = Math.max(
+    1,
+    Math.ceil(filteredBuyers.length / buyersPerPage),
+  );
+  const visibleBuyers = filteredBuyers.slice(
+    (buyerPage - 1) * buyersPerPage,
+    buyerPage * buyersPerPage,
+  );
+
+  useEffect(() => setBuyerPage(1), [buyerOrder, buyerSearch]);
+  useEffect(() => {
+    if (buyerPage > buyerPageCount) setBuyerPage(buyerPageCount);
+  }, [buyerPage, buyerPageCount]);
 
   if (isLoading)
     return (
@@ -263,7 +364,13 @@ export default function RaffleDetail() {
   };
 
   // Create an array of 100 elements for the grid 0-99
-  const gridNumbers = Array.from({ length: 100 }, (_, i) => i);
+  const gridNumbers = Array.from({ length: 100 }, (_, i) => i).filter(
+    (number) => {
+      const status =
+        numbers?.find((item) => item.number === number)?.status ?? "available";
+      return numberFilter === "all" || status === numberFilter;
+    },
+  );
 
   // Map API numbers to a fast lookup dictionary
   const numbersMap = new Map(numbers?.map((n) => [n.number, n]));
@@ -312,6 +419,14 @@ export default function RaffleDetail() {
               <ImageIcon className="w-4 h-4 mr-2" />
             )}{" "}
             Imagen
+          </Button>
+          <Button
+            variant="outline"
+            className="bg-card"
+            onClick={handleDownloadExcel}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Excel
           </Button>
           <Button
             variant="ghost"
@@ -532,6 +647,36 @@ export default function RaffleDetail() {
         <div className="p-6 md:p-8 bg-muted/10 min-h-[500px]">
           {activeTab === "numbers" ? (
             <div className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">Mostrar y descargar</p>
+                  <p className="text-sm text-muted-foreground">
+                    La imagen, el PDF y el Excel usarán esta misma vista.
+                  </p>
+                </div>
+                <div
+                  className="flex rounded-xl bg-muted p-1"
+                  aria-label="Filtrar números"
+                >
+                  {(["all", "available", "sold"] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => {
+                        setNumberFilter(filter);
+                        setSelectedNumbers([]);
+                      }}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${numberFilter === filter ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {filter === "all"
+                        ? "Todos"
+                        : filter === "available"
+                          ? "Disponibles"
+                          : "Vendidos"}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {assigningBuyer && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
                   <p className="text-sm">
@@ -627,13 +772,44 @@ export default function RaffleDetail() {
                   </div>
                 ) : null}
               </div>
+              <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 md:flex-row md:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={buyerSearch}
+                    onChange={(event) => setBuyerSearch(event.target.value)}
+                    placeholder="Buscar por nombre o teléfono"
+                    className="pl-9"
+                    aria-label="Buscar comprador por nombre o teléfono"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  Ordenar
+                  <select
+                    value={buyerOrder}
+                    onChange={(event) =>
+                      setBuyerOrder(event.target.value as typeof buyerOrder)
+                    }
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="recent">Más recientes</option>
+                    <option value="name">Nombre A–Z</option>
+                    <option value="numbers">Más números</option>
+                  </select>
+                </label>
+              </div>
               {!buyers?.length ? (
                 <div className="text-center py-20 text-muted-foreground">
                   <User className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   <p className="text-lg">No hay compradores registrados aún.</p>
                 </div>
+              ) : filteredBuyers.length === 0 ? (
+                <div className="py-16 text-center text-muted-foreground">
+                  <Search className="mx-auto mb-3 h-10 w-10 opacity-25" />
+                  No encontramos compradores con esa búsqueda.
+                </div>
               ) : (
-                buyers.map((buyer) => {
+                visibleBuyers.map((buyer) => {
                   const buyerNumbers =
                     numbers?.filter((item) => item.buyerId === buyer.id) ?? [];
                   const allPaid =
@@ -764,6 +940,32 @@ export default function RaffleDetail() {
                     </div>
                   );
                 })
+              )}
+              {filteredBuyers.length > buyersPerPage && (
+                <div className="flex items-center justify-between border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Página {buyerPage} de {buyerPageCount} ·{" "}
+                    {filteredBuyers.length} compradores
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={buyerPage === 1}
+                      onClick={() => setBuyerPage((page) => page - 1)}
+                    >
+                      <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={buyerPage === buyerPageCount}
+                      onClick={() => setBuyerPage((page) => page + 1)}
+                    >
+                      Siguiente <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}
