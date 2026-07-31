@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { settings } = useAppSettings();
+  const { settings, saveSettings, t } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [backupToRestore, setBackupToRestore] = useState<File | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
@@ -54,9 +54,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-display font-bold text-xl sm:text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">{settings.appName}</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <span className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground mr-2"><Check className="w-3.5 h-3.5 text-green-600" /> {online ? "Guardado local" : "Modo sin conexión"}</span>
-            <Button variant="ghost" size="icon" aria-label="Configuración" onClick={() => setSettingsOpen(true)}><Settings className="w-5 h-5" /></Button>
-            <Link href="/raffles/new" className="hidden sm:flex"><Button variant="outline"><PlusCircle className="w-5 h-5 mr-2" />Nueva Rifa</Button></Link>
+            <span className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground mr-2"><Check className="w-3.5 h-3.5 text-green-600" /> {t(online ? "Guardado local" : "Modo sin conexión")}</span>
+            <Button variant="ghost" size="sm" className="px-2 font-semibold" aria-label={t("Idioma")} onClick={() => saveSettings({ ...settings, language: settings.language === "es" ? "en" : "es" })}>{settings.language.toUpperCase()}</Button>
+            <Button variant="ghost" size="icon" aria-label={t("Configuración")} onClick={() => setSettingsOpen(true)}><Settings className="w-5 h-5" /></Button>
+            <Link href="/raffles/new" className="hidden sm:flex"><Button variant="outline"><PlusCircle className="w-5 h-5 mr-2" />{t("Nueva Rifa")}</Button></Link>
           </nav>
         </div>
       </header>
@@ -65,11 +66,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Configuración y respaldo</DialogTitle><DialogDescription>Personaliza la aplicación o guarda una copia portátil de tus rifas.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{t("Configuración y respaldo")}</DialogTitle><DialogDescription>{t("Personaliza la aplicación o guarda una copia portátil de tus rifas.")}</DialogDescription></DialogHeader>
           <Setup compact onDone={() => setSettingsOpen(false)} />
           <div className="border-t pt-5 grid sm:grid-cols-2 gap-3">
-            <Button variant="outline" onClick={downloadBackup}><Download className="w-4 h-4 mr-2" />Descargar respaldo</Button>
-            <Button variant="outline" onClick={() => fileInput.current?.click()}><Upload className="w-4 h-4 mr-2" />Restaurar respaldo</Button>
+            <Button variant="outline" onClick={downloadBackup}><Download className="w-4 h-4 mr-2" />{t("Descargar respaldo")}</Button>
+            <Button variant="outline" onClick={() => fileInput.current?.click()}><Upload className="w-4 h-4 mr-2" />{t("Restaurar respaldo")}</Button>
             <input ref={fileInput} className="hidden" type="file" accept="application/json" onChange={(event) => { setBackupToRestore(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }} />
           </div>
         </DialogContent>

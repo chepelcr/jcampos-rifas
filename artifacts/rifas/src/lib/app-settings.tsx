@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { translate, type Language } from "@/lib/i18n";
 
 const SETTINGS_KEY = "rifas-app-settings-v1";
 
@@ -8,6 +9,7 @@ export type AppSettings = {
   primaryColor: string;
   accentColor: string;
   theme: "light" | "dark" | "system";
+  language: Language;
 };
 
 const defaults: AppSettings = {
@@ -16,6 +18,7 @@ const defaults: AppSettings = {
   primaryColor: "#e62e62",
   accentColor: "#f7bd1b",
   theme: "system",
+  language: "es",
 };
 
 function loadSettings(): AppSettings {
@@ -49,7 +52,7 @@ function contrastHsl(hex: string) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.42 ? "330 20% 10%" : "0 0% 100%";
 }
 
-type SettingsContextValue = { settings: AppSettings; saveSettings: (value: AppSettings) => void };
+type SettingsContextValue = { settings: AppSettings; saveSettings: (value: AppSettings) => void; t: (text: string) => string };
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function AppSettingsProvider({ children }: { children: React.ReactNode }) {
@@ -82,7 +85,8 @@ export function AppSettingsProvider({ children }: { children: React.ReactNode })
     return () => media.removeEventListener("change", applyTheme);
   }, [settings.theme]);
 
-  const value = useMemo(() => ({ settings, saveSettings }), [settings]);
+  useEffect(() => { document.documentElement.lang = settings.language; }, [settings.language]);
+  const value = useMemo(() => ({ settings, saveSettings, t: (text: string) => translate(settings.language, text) }), [settings]);
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 

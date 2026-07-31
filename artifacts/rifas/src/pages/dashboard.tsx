@@ -5,21 +5,24 @@ import { formatCurrency, formatRaffleDate } from "@/lib/utils"
 import { Link } from "wouter"
 import { Ticket, Calendar, Users, Trophy, ChevronRight, Loader2, Sparkles, PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAppSettings } from "@/lib/app-settings"
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useAppSettings()
   switch (status) {
     case 'active':
-      return <Badge variant="success" className="animate-in fade-in zoom-in duration-500">Activa</Badge>
+      return <Badge variant="success" className="animate-in fade-in zoom-in duration-500">{t("Activa")}</Badge>
     case 'completed':
-      return <Badge variant="default" className="bg-blue-100 text-blue-700">Completada</Badge>
+      return <Badge variant="default" className="bg-blue-100 text-blue-700">{t("Completada")}</Badge>
     case 'cancelled':
-      return <Badge variant="destructive">Cancelada</Badge>
+      return <Badge variant="destructive">{t("Cancelada")}</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
 }
 
 export default function Dashboard() {
+  const { t } = useAppSettings()
   const { data: raffles, isLoading, error } = useRaffles()
 
   if (isLoading) {
@@ -62,7 +65,7 @@ export default function Dashboard() {
         <div className="relative z-10 max-w-2xl">
           <Badge className="bg-primary/20 text-primary border-primary/30 mb-4 backdrop-blur-md">
             <Sparkles className="w-3 h-3 mr-2" />
-            Panel de Control
+            {t("Panel de Control")}
           </Badge>
           <h1 className="text-4xl md:text-5xl font-display font-extrabold mb-4 leading-tight text-background">
             Gestiona tus rifas con <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">estilo y facilidad</span>
@@ -74,7 +77,7 @@ export default function Dashboard() {
           <Link href="/raffles/new">
             <Button size="lg" className="rounded-full shadow-primary/30">
               <PlusCircle className="w-5 h-5 mr-2" />
-              Crear Nueva Rifa
+              {t("Crear Nueva Rifa")}
             </Button>
           </Link>
         </div>
@@ -82,20 +85,20 @@ export default function Dashboard() {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-display font-bold">Tus Rifas</h2>
+          <h2 className="text-3xl font-display font-bold">{t("Tus Rifas")}</h2>
         </div>
 
         {!raffles?.length ? (
           <Card className="border-dashed bg-transparent shadow-none border-4">
             <CardContent className="flex flex-col items-center justify-center py-20 text-center">
               <Ticket className="w-16 h-16 text-muted-foreground/30 mb-4" />
-              <h3 className="text-2xl font-bold text-foreground">Aún no hay rifas</h3>
+              <h3 className="text-2xl font-bold text-foreground">{t("Aún no hay rifas")}</h3>
               <p className="text-muted-foreground mt-2 mb-6 max-w-md">
                 Empieza a generar emoción creando tu primera rifa. Configura los premios, el precio y la fecha del sorteo.
               </p>
               <Link href="/raffles/new">
                 <Button variant="outline" className="rounded-full border-primary/50 text-primary">
-                  Crear mi primera rifa
+                  {t("Crear mi primera rifa")}
                 </Button>
               </Link>
             </CardContent>
@@ -129,7 +132,7 @@ export default function Dashboard() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground flex items-center">
                           <Users className="w-4 h-4 mr-1" />
-                          Progreso
+                          {t("Progreso")}
                         </span>
                         <span className="font-bold">{raffle.soldNumbers} / {raffle.totalNumbers}</span>
                       </div>
@@ -152,7 +155,7 @@ export default function Dashboard() {
 
                   </CardContent>
                   <CardFooter className="pt-0 border-t border-border/50 mt-auto flex justify-between items-center bg-muted/10 rounded-b-2xl p-4">
-                    <span className="text-sm font-semibold text-primary">Gestionar rifa</span>
+                    <span className="text-sm font-semibold text-primary">{t("Gestionar rifa")}</span>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors text-primary">
                       <ChevronRight className="w-4 h-4" />
                     </div>
