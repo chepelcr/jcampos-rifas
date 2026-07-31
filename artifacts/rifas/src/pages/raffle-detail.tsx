@@ -695,7 +695,7 @@ export default function RaffleDetail() {
                   </Button>
                 </div>
               )}
-              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-11 gap-2 md:gap-3">
+              <div className="grid grid-cols-5 gap-2 sm:grid-cols-5 md:grid-cols-10 md:gap-3">
                 {gridNumbers.map((num) => {
                   const info = numbersMap.get(num);
                   const isSold = info?.status === "sold";
@@ -783,14 +783,14 @@ export default function RaffleDetail() {
                     aria-label="Buscar comprador por nombre o teléfono"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-sm font-medium">
+                <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
                   Ordenar
                   <select
                     value={buyerOrder}
                     onChange={(event) =>
                       setBuyerOrder(event.target.value as typeof buyerOrder)
                     }
-                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
                   >
                     <option value="recent">Más recientes</option>
                     <option value="name">Nombre A–Z</option>
