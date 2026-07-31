@@ -6,12 +6,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { exportLocalBackup, importLocalBackup } from "@/hooks/use-raffles";
 import { useAppSettings } from "@/lib/app-settings";
 import Setup from "@/pages/setup";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { settings } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [backupToRestore, setBackupToRestore] = useState<File | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const fileInput = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   useEffect(() => {
     const markOnline = () => setOnline(true);
     const markOffline = () => setOnline(false);
@@ -32,10 +36,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
     URL.revokeObjectURL(link.href);
   };
 
-  const restoreBackup = async (file?: File) => {
-    if (!file || !confirm("¿Reemplazar los datos locales con este respaldo?")) return;
-    try { importLocalBackup(await file.text()); window.location.reload(); }
-    catch (error) { alert(error instanceof Error ? error.message : "No se pudo restaurar el respaldo."); }
+  const restoreBackup = async () => {
+    if (!backupToRestore) return;
+    try { importLocalBackup(await backupToRestore.text()); window.location.reload(); }
+    catch (error) {
+      setBackupToRestore(null);
+      toast({ variant: "destructive", title: "No se pudo restaurar el respaldo", description: error instanceof Error ? error.message : "Selecciona un archivo de respaldo válido." });
+    }
   };
 
   return (
@@ -63,10 +70,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="border-t pt-5 grid sm:grid-cols-2 gap-3">
             <Button variant="outline" onClick={downloadBackup}><Download className="w-4 h-4 mr-2" />Descargar respaldo</Button>
             <Button variant="outline" onClick={() => fileInput.current?.click()}><Upload className="w-4 h-4 mr-2" />Restaurar respaldo</Button>
-            <input ref={fileInput} className="hidden" type="file" accept="application/json" onChange={(event) => restoreBackup(event.target.files?.[0])} />
+            <input ref={fileInput} className="hidden" type="file" accept="application/json" onChange={(event) => { setBackupToRestore(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }} />
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={backupToRestore !== null} onOpenChange={(open) => !open && setBackupToRestore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Restaurar este respaldo?</AlertDialogTitle>
+            <AlertDialogDescription>Los datos locales actuales se reemplazarán con <strong>{backupToRestore?.name}</strong>. Esta acción no se puede deshacer.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={restoreBackup}>Restaurar respaldo</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
